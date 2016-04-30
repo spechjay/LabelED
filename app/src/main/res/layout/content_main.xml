@@ -7,8 +7,18 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.totalboron.jay.labeled.MainActivity"
+    android:background="@color/card_view_contrast"
     tools:showIn="@layout/app_bar_main">
     <android.support.v7.widget.RecyclerView android:id="@+id/main_activity_recycler_view"
                                             android:layout_width="match_parent"
                                             android:layout_height="match_parent"/>
+    <Button android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:text="Remove All"
+            android:onClick="removeAll"
+    />
+    <Button android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:text="Refresh"
+            android:layout_alignParentRight="true"
+            android:onClick="refresh"
+    />
 </RelativeLayout>

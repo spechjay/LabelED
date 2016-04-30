@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -14,21 +13,12 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.jar.Manifest;
 
-/**
- * Created by Jay on 07/04/16.
- */
 public class GalleryIndex extends AppCompatActivity
 {
-    //Todo: Traverse all the directories for now atleast in Camera itself
-    //Todo: Then traverse in all the directories there is
-    //Todo:Decrease the total Cache Memory
     RecyclerView recyclerView;
-    int cnum;
     final private int REQUEST_CODE_FOR_IMAGE = 75;
     private String logging = getClass().getSimpleName();
     private final int REQUEST_READ_STORAGE = 55;
@@ -97,7 +87,6 @@ public class GalleryIndex extends AppCompatActivity
         GridLayoutManager gridLayoutManager = new GridLayoutManager(getApplicationContext(), cnum);
         recyclerView.setLayoutManager(gridLayoutManager);
     }
-
     public void openImages(String bucket_name)
     {
         Intent intent = new Intent(this, ImageListActivity.class);

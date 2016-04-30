@@ -1,9 +1,12 @@
 package com.totalboron.jay.labeled;
 
 import android.Manifest;
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,6 +19,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -86,7 +90,7 @@ public class DrawingScene extends FragmentActivity
             }
         });
         toolbars = (LinearLayoutCustom) findViewById(R.id.toolsToShow);
-        linearLayout = (LinearLayout) findViewById(R.id.colorsBar);
+        linearLayout = (LinearLayout) findViewById(R.id.paintToolbar);
         colorsBarOpen = linearLayout.getVisibility() == View.VISIBLE;
     }
 
@@ -177,6 +181,7 @@ public class DrawingScene extends FragmentActivity
         return super.onKeyDown(keyCode, event);
     }
 
+
     private void removeFragment()
     {
         removeKeyboard();
@@ -189,7 +194,7 @@ public class DrawingScene extends FragmentActivity
     private void removeKeyboard()
     {
         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(editText.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+        inputMethodManager.hideSoftInputFromWindow(editText.getWindowToken(), 0);
     }
 
 
@@ -215,32 +220,52 @@ public class DrawingScene extends FragmentActivity
         int width = getWindow().getDecorView().getWidth();
         float aspectRatio = aspectRatioFind();
         int height = (int) (width * aspectRatio);
-        setParams(width, height);
-        drawingView.setDrawingScene(this);
-        Glide.with(getApplicationContext()).load(filePath).into(drawingView);
+        if (aspectRatio>=1)
+        {
+            if (getResources().getConfiguration().orientation!= Configuration.ORIENTATION_PORTRAIT)
+            {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            }
+            else
+            {
+                setParams(width, height);
+            }
+        }
+        else
+        {
+            if (getResources().getConfiguration().orientation!= Configuration.ORIENTATION_LANDSCAPE)
+            {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            }
+            else
+            {
+                height=getWindow().getDecorView().getHeight();
+                width=(int) (height/aspectRatio);
+                setParams(width,height);
+            }
+        }
     }
 
 
     private void setParams(int width, int height)
     {
-        Log.d(logging, "insetParams");
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) drawingView.getLayoutParams();
         layoutParams.height = height;
+        layoutParams.width=width;
         drawingView.setLayoutParams(layoutParams);
+        drawingView.setDrawingScene(this);
+        Glide.with(getApplicationContext()).load(filePath).into(drawingView);
     }
 
     private float aspectRatioFind()
     {
-        Log.d(logging, "Start of AspectRatio");
         File file = new File(filePath);
         BitmapFactory.Options bmoption = new BitmapFactory.Options();
         bmoption.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(file.getAbsolutePath(), bmoption);
         imageHeight = bmoption.outHeight;
         imageWidth = bmoption.outWidth;
-        float aspectRatio = imageHeight / (float) imageWidth;
-        Log.d(logging, "End of aspectRatio");
-        return aspectRatio;
+        return imageHeight / (float) imageWidth;
     }
 
 
@@ -249,7 +274,7 @@ public class DrawingScene extends FragmentActivity
         checkForPermissions();
     }
 
-    private void loadEverything()
+    private void saveImageIntoFile()
     {
         drawingView.setDrawingCacheEnabled(true);
         drawingView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
@@ -257,8 +282,8 @@ public class DrawingScene extends FragmentActivity
         Bitmap bitmap = drawingView.getDrawingCache();
         Uri uri = Uri.parse(filePath);
         String fileName = uri.getLastPathSegment();
-        AsyncTaskSaveImage asyncTaskSaveImage = new AsyncTaskSaveImage(fileName, getApplicationContext());
-        asyncTaskSaveImage.execute(bitmap);
+        AsyncTaskSaveImage asyncTaskSaveImage = new AsyncTaskSaveImage(fileName, getApplicationContext(),drawingView.getTags_for_each_label());
+        asyncTaskSaveImage.execute(Bitmap.createBitmap(bitmap));
         finish();
     }
 
@@ -267,7 +292,7 @@ public class DrawingScene extends FragmentActivity
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
             {
-                loadEverything();
+                saveImageIntoFile();
             } else
             {
                 if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
@@ -276,7 +301,7 @@ public class DrawingScene extends FragmentActivity
                 }
                 requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
             }
-        else loadEverything();
+        else saveImageIntoFile();
     }
 
     @Override
@@ -286,7 +311,7 @@ public class DrawingScene extends FragmentActivity
         {
             if (requestCode == REQUEST_WRITE_STORAGE)
             {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) loadEverything();
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) saveImageIntoFile();
                 else
                 {
                     Toast.makeText(getApplicationContext(), "Permission not granted", Toast.LENGTH_LONG).show();
@@ -325,16 +350,14 @@ public class DrawingScene extends FragmentActivity
         {
             if (colorsBarOpen)
             {
-                seekBar.setVisibility(View.VISIBLE);
-                linearLayout.setVisibility(View.VISIBLE);
+                toggleTheColorBar(!colorsBarOpen);
             }
             toolbars.setVisibility(View.VISIBLE);
         } else
         {
             if (colorsBarOpen)
             {
-                seekBar.setVisibility(View.INVISIBLE);
-                linearLayout.setVisibility(View.INVISIBLE);
+                toggleTheColorBar(colorsBarOpen);
             }
             toolbars.setVisibility(View.INVISIBLE);
         }
@@ -377,14 +400,12 @@ public class DrawingScene extends FragmentActivity
     {
         if (colorsBarOpen)
         {
+            toggleTheColorBar(colorsBarOpen);
             colorsBarOpen = false;
-            linearLayout.setVisibility(View.INVISIBLE);
-            seekBar.setVisibility(View.INVISIBLE);
         } else
         {
+            toggleTheColorBar(colorsBarOpen);
             colorsBarOpen = true;
-            linearLayout.setVisibility(View.VISIBLE);
-            seekBar.setVisibility(View.VISIBLE);
         }
 
     }
@@ -393,4 +414,61 @@ public class DrawingScene extends FragmentActivity
     {
         drawingView.undoLast();
     }
+
+    private void toggleTheColorBar(boolean how)
+    {
+        if (how)
+        {
+            int cx=linearLayout.getMeasuredWidth();
+            int cy=linearLayout.getMeasuredHeight();
+            if (Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP)
+            {
+                Animator animator = ViewAnimationUtils.createCircularReveal(linearLayout, cx, cy, cx, 0);
+                animator.addListener(new Animator.AnimatorListener()
+                {
+                    @Override
+                    public void onAnimationStart(Animator animation)
+                    {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation)
+                    {
+                        linearLayout.setVisibility(View.INVISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation)
+                    {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation)
+                    {
+
+                    }
+                });
+                animator.start();
+            }
+            else linearLayout.setVisibility(View.INVISIBLE);
+        }
+        else
+        {
+            int cx=linearLayout.getMeasuredWidth();
+            int cy=linearLayout.getMeasuredHeight();
+            if (Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP)
+            {
+                Animator animator = ViewAnimationUtils.createCircularReveal(linearLayout, cx, cy, 0, cx);
+                linearLayout.setVisibility(View.VISIBLE);
+                animator.start();
+            }
+            else
+            linearLayout.setVisibility(View.VISIBLE);
+
+        }
+    }
+
+
 }

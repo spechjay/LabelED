@@ -26,12 +26,11 @@
         </activity>
         <activity android:name=".DrawingScene"
                   android:screenOrientation="locked"
-                  android:theme="@style/GalleryTheme"
-        />
+                  android:theme="@style/GalleryTheme"/>
+
         <activity android:name=".ImageListActivity"
-                  android:theme="@style/GalleryTheme">
-        </activity>
-        <activity android:name=".ActivityFake"/>
+                  android:theme="@style/GalleryTheme"/>
+
     </application>
 
 </manifest>

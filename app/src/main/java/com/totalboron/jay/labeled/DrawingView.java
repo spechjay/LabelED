@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -90,6 +91,8 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         paint.setStyle(Paint.Style.STROKE);
         textPaint=new TextPaint();
         textPaint.setColor(color);
+        Typeface typeface=Typeface.createFromAsset(context.getAssets(),"fonts/roboto_mediumItalic.ttf");
+        textPaint.setTypeface(typeface);
         textPaint.setTextSize(TEXT_SIZE);
         bitmap_list= new ArrayList<>();
         tags_for_each_label=new ArrayList<>();
@@ -451,4 +454,8 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         }
     }
 
+    public List<String> getTags_for_each_label()
+    {
+        return tags_for_each_label;
+    }
 }

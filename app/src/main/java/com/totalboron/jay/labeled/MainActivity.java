@@ -9,6 +9,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity
 {
     private final int REQUEST_PICTURE=1;
     private RecyclerView recyclerView;
+    private AdapterForCardView adapterForCardView;
     private String logging=getClass().getSimpleName();
 
     @Override
@@ -33,7 +35,6 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         recyclerView=(RecyclerView)findViewById(R.id.main_activity_recycler_view);
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         assert fab != null;
         fab.setOnClickListener(new View.OnClickListener()
@@ -45,18 +46,20 @@ public class MainActivity extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_PICTURE);
             }
         });
+        LinearLayoutManager linearLayoutManager=new LinearLayoutManager(getApplicationContext());
+        recyclerView.setLayoutManager(linearLayoutManager);
+        adapterForCardView=new AdapterForCardView(getApplicationContext(),null, null);
+        recyclerView.setAdapter(adapterForCardView);
+        AsyncTaskForInternalFiles asyncTaskForInternalFiles=new AsyncTaskForInternalFiles(getApplicationContext(),adapterForCardView,false);
+        asyncTaskForInternalFiles.execute();
+        Resetting resetting=Resetting.getInstance(getApplicationContext());
+        resetting.setAdapterForCardView(adapterForCardView);
     }
 
     @Override
     protected void onResume()
     {
         super.onResume();
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState)
-    {
-        super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
@@ -71,4 +74,15 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
             }
     }
+
+    public void removeAll(View view)
+    {
+        AsyncRemoveImages asyncRemoveImages=new AsyncRemoveImages(getApplicationContext(),adapterForCardView);
+        asyncRemoveImages.execute();
+    }
+    public void refresh(View view)
+    {
+        adapterForCardView.notifyDataSetChanged();
+    }
+
 }
