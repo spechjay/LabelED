@@ -46,8 +46,13 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
     private final int MAX_WIDTH_TEXT=610;
     private final int STROKE_DEFAULT=5;
     private final int TEXT_SIZE=75;
-    private List<Bitmap> bitmap_list;
+    private List<Path> pathListForUndo;
+    private List<Float> x1;
+    private List<Float> y1;
+    private List<Float> x2;
+    private List<Float> y2;
     private List<String> tags_for_each_label;
+    private List<Float> size_of_text;
     private int list_item;
 
     public DrawingView(Context context, AttributeSet attrs, int defStyleAttr)
@@ -94,8 +99,13 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         Typeface typeface=Typeface.createFromAsset(context.getAssets(),"fonts/roboto_mediumItalic.ttf");
         textPaint.setTypeface(typeface);
         textPaint.setTextSize(TEXT_SIZE);
-        bitmap_list= new ArrayList<>();
         tags_for_each_label=new ArrayList<>();
+        pathListForUndo=new ArrayList<>();
+        x1=new ArrayList<>();
+        x2=new ArrayList<>();
+        y1=new ArrayList<>();
+        y2=new ArrayList<>();
+        size_of_text=new ArrayList<>();
         list_item=-1;
     }
     @Override
@@ -131,20 +141,20 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
                 invalidate();
             }
         }
-
-
-
-
-
-
         if (event.getAction()==MotionEvent.ACTION_UP)
         {
+            finX=event.getX();
+            finY=event.getY();
             if (gestureNormalScroll) drawingScene.loadFragment(null);
             if (gestureNormalScroll||longPress)
             {
-                Log.d(logging,"Only arrow saved");
-                bitmap_list.add(Bitmap.createBitmap(bitmap));
                 tags_for_each_label.add("");
+                pathListForUndo.add(new Path(path));
+                x1.add(initX);
+                y1.add(initY);
+                x2.add(finX);
+                y2.add(finY);
+                size_of_text.add(textPaint.getTextSize());
                 ++list_item;
             }
             gestureNormalScroll=longPress=false;
@@ -169,16 +179,14 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         invalidate();
     }
 
-    public void sendMessage(String string)
+    private void sendMessage(String string,float initX,float initY,float finX,float finY)
     {
         float textSize=textPaint.getTextSize();
-        //Handle the message here
-        //Todo:Correct for landscape position in a different function and arrange all these into functions also
         float degree=getAngle(initX, initY, finX, finY);
         degree=(float)Math.toDegrees(degree);
         float degreeAbs=Math.abs(degree);
-        boolean inverse=isInverse(degree);
-        int minWidth=minWidthAdjustment(string,degreeAbs);
+        boolean inverse=isInverse(degree,finX,initX);
+        int minWidth=minWidthAdjustment(string,degreeAbs,initX,finX);
         StaticLayout staticLayout=new StaticLayout(string,textPaint,minWidth, Layout.Alignment.ALIGN_CENTER,lineSpacing,0f,false);
         int line=staticLayout.getLineCount();
         float height=(textPaint.ascent()-textPaint.descent())*line+line*lineSpacing;
@@ -196,8 +204,6 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         backupcanvas.translate(finX, finY);
         staticLayout.draw(backupcanvas);
         backupcanvas.translate(-finX, -finY);
-        Log.d(logging,list_item+"=at save time");
-        bitmap_list.add(list_item+1,Bitmap.createBitmap(bitmap));
         tags_for_each_label.add(list_item,string);
         clearBitmapList();
         textPaint.setTextSize(textSize);
@@ -205,17 +211,29 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
     }
     private void clearBitmapList()
     {
-        for (int i=bitmap_list.size()-1;i>list_item;i--)
+        for (int i=tags_for_each_label.size()-1;i>list_item;i--)
         {
-            Log.d(logging,bitmap_list.size()+"=size of bitmap");
-            Log.d(logging,i+"=i");
-            Log.d(logging,tags_for_each_label.size()+"=tag size");
-            bitmap_list.remove(i);
+            showTextSize();
             tags_for_each_label.remove(i);
+            if (i<x1.size())
+            {
+                x1.remove(i);
+                x2.remove(i);
+                y1.remove(i);
+                y2.remove(i);
+                pathListForUndo.remove(i);
+                size_of_text.remove(i);
+            }
         }
     }
+    void showTextSize()
+    {
+        for (int i=0;i<size_of_text.size();i++)
+            Log.d(logging,"Text at ="+i+"="+size_of_text.get(i));
+    }
 
-    private int minWidthAdjustment(String string, float degreeAbs)
+
+    private int minWidthAdjustment(String string, float degreeAbs,float initX,float finX)
     {
         int minWidth;
         float availableSpace;
@@ -260,7 +278,7 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
     }
 
 
-    private boolean isInverse(double degree)
+    private boolean isInverse(double degree,float finX,float initX)
     {
         if (degree>=0&&finX<=initX)
             return true;
@@ -441,7 +459,7 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         if (list_item>0)
         {
             backupcanvas.drawColor(0, PorterDuff.Mode.CLEAR);
-            backupcanvas.drawBitmap(bitmap_list.get(list_item),0,0,paintForBitmap);
+            drawBitmapPath();
             --list_item;
             clearBitmapList();
             invalidate();
@@ -457,5 +475,23 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
     public List<String> getTags_for_each_label()
     {
         return tags_for_each_label;
+    }
+    private void drawBitmapPath()
+    {
+        backupcanvas.drawColor(0, PorterDuff.Mode.CLEAR);
+        float currentSize=textPaint.getTextSize();
+        for (int i=0;i<list_item;i++)
+        {
+            backupcanvas.drawPath(pathListForUndo.get(i),paint);
+            textPaint.setTextSize(size_of_text.get(i));
+            sendMessage(tags_for_each_label.get(i),x1.get(i),y1.get(i),x2.get(i),y2.get(i));
+        }
+        textPaint.setTextSize(currentSize);
+    }
+
+
+    public void messageRecieve(String string)
+    {
+        sendMessage(string,initX,initY,finX,finY);
     }
 }

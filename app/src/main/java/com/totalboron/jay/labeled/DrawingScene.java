@@ -212,7 +212,7 @@ public class DrawingScene extends FragmentActivity
     public void messageReceiver(View view)
     {
         String string=editText.getText().toString();
-        drawingView.sendMessage(string);
+        drawingView.messageRecieve(string);
         removeFragment();
     }
     public void loadImage()
