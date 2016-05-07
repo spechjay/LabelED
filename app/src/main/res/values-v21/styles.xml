@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="GalleryTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowTranslucentStatus" >true</item>
+        <item name="android:colorControlHighlight">@color/colorControlHighlight</item>
+
+    </style>
+</resources>

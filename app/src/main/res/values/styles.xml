@@ -16,6 +16,7 @@
 
     <style name="GalleryTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowTranslucentStatus" tools:targetApi="kitkat">true</item>
+
     </style>
 
 </resources>

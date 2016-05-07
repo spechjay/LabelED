@@ -29,23 +29,25 @@
                    android:src="@drawable/ic_save_white_48px"/>
         <ImageView android:layout_width="@dimen/imageIconSize"
                    android:layout_height="@dimen/imageIconSize"
+                   android:id="@+id/brushing"
                    android:layout_gravity="center_horizontal|bottom"
                    android:layout_marginBottom="@dimen/icon_margin"
                    android:layout_marginLeft="15dp"
                    android:layout_marginRight="15dp"
                    android:onClick="toggleColor"
-
                    android:src="@drawable/ic_brush_white_48px"/>
         <ImageView android:layout_width="@dimen/imageIconSize"
                    android:layout_height="@dimen/imageIconSize"
                    android:layout_gravity="center_horizontal|bottom"
                    android:layout_marginBottom="@dimen/icon_margin"
+                   android:id="@+id/undo_button"
                    android:layout_marginLeft="15dp"
                    android:layout_marginRight="15dp"
                    android:onClick="undoLast"
                    android:src="@drawable/ic_restore_page_white_48px"/>
         <ImageView android:layout_width="@dimen/imageIconSize"
                    android:layout_height="@dimen/imageIconSize"
+                   android:id="@+id/trashing"
                    android:layout_gravity="center_horizontal|bottom"
                    android:layout_marginBottom="@dimen/icon_margin"
                    android:layout_marginLeft="15dp"
@@ -108,27 +110,31 @@
     </LinearLayout>
     <com.totalboron.jay.labeled.LinearLayoutCustom android:id="@+id/edit_text_tray"
                                                    android:layout_width="match_parent"
-                                                   android:layout_height="wrap_content"
+                                                   android:layout_height="40dp"
                                                    android:layout_marginEnd="@dimen/margin_of_edit_text"
                                                    android:layout_marginLeft="@dimen/margin_of_edit_text"
                                                    android:layout_marginRight="@dimen/margin_of_edit_text"
                                                    android:layout_marginStart="@dimen/margin_of_edit_text"
-                                                   android:layout_marginTop="20dp"
-                                                   android:background="@drawable/edit_text_view"
+                                                   android:layout_marginTop="25dp"
                                                    android:orientation="horizontal"
                                                    android:visibility="invisible">
-
         <EditText android:id="@+id/edit_text" android:layout_width="0dp"
                   android:layout_height="wrap_content"
                   android:layout_marginLeft="4dp"
+                  android:gravity="center_vertical"
                   android:layout_marginStart="4dp"
+                  android:paddingLeft="5dp"
+                  android:paddingStart="5dp"
+                  android:background="@drawable/edit_text_view"
+                  android:hint="Enter Label"
+                  android:inputType="textCapWords"
+                  android:imeOptions="actionSend"
                   android:layout_weight="1"/>
 
-        <Button android:id="@+id/button_for_edit_text" android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="messageReceiver"
-                android:text="Done"/>
+        <ImageView android:id="@+id/button_for_edit_text" android:layout_width="35dp"
+                   android:layout_height="40dp"
+                   android:src="@drawable/ic_send_black_24dp"
+                   android:onClick="messageReceiver"/>
 
     </com.totalboron.jay.labeled.LinearLayoutCustom>
-
 </RelativeLayout>

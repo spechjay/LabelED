@@ -2,6 +2,10 @@ package com.totalboron.jay.labeled;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.TimeAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -20,17 +24,23 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
+import android.view.animation.OvershootInterpolator;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DrawingScene extends FragmentActivity
 {
@@ -89,9 +99,24 @@ public class DrawingScene extends FragmentActivity
 
             }
         });
+        seekBar.setProgress(35);
+        drawingView.setSize(35);
         toolbars = (LinearLayoutCustom) findViewById(R.id.toolsToShow);
         linearLayout = (LinearLayout) findViewById(R.id.paintToolbar);
         colorsBarOpen = linearLayout.getVisibility() == View.VISIBLE;
+
+
+        editText.setOnEditorActionListener(new TextView.OnEditorActionListener()
+        {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+            {
+                if (actionId== EditorInfo.IME_ACTION_SEND)
+                    messageReceiver(null);
+                return false;
+            }
+        });
+
     }
 
     private void handleSendImages(Intent intent)
@@ -162,6 +187,8 @@ public class DrawingScene extends FragmentActivity
     {
         edit_text_tray.setVisibility(View.VISIBLE);
         isFragmentPresent = true;
+        InputMethodManager inputMethodManager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.showSoftInput(editText,InputMethodManager.SHOW_IMPLICIT);
     }
 
 
@@ -338,8 +365,7 @@ public class DrawingScene extends FragmentActivity
 
     public void singleTapDone()
     {
-        int visibility = toolbars.getVisibility();
-        if (visibility == View.INVISIBLE)
+        if (toolbars.getAlpha()!= 1)
             toolsToggle(true);
         else toolsToggle(false);
     }
@@ -350,17 +376,93 @@ public class DrawingScene extends FragmentActivity
         {
             if (colorsBarOpen)
             {
-                toggleTheColorBar(!colorsBarOpen);
+                ObjectAnimator objectAnimator=ObjectAnimator.ofFloat(linearLayout,View.ALPHA,0,1);
+                objectAnimator.setDuration(150);
+                objectAnimator.start();
             }
-            toolbars.setVisibility(View.VISIBLE);
+            animateOpeningOfTools();
         } else
         {
             if (colorsBarOpen)
             {
-                toggleTheColorBar(colorsBarOpen);
+                ObjectAnimator objectAnimator=ObjectAnimator.ofFloat(linearLayout,View.ALPHA,1,0);
+                objectAnimator.setDuration(150);
+                objectAnimator.start();
             }
-            toolbars.setVisibility(View.INVISIBLE);
+            animateClosingOfTools();
         }
+    }
+
+    private void animateOpeningOfTools()
+    {
+        AnimatorSet animatorSet=new AnimatorSet();
+        List<Animator> list=getListAnimationOpen();
+        Log.d(logging,"Here in opening");
+        animatorSet.playTogether(list);
+        animatorSet.start();
+    }
+
+    private List<Animator> getListAnimationOpen()
+    {
+        List<Animator> list=new ArrayList<>();
+        View[] view={toolbars.findViewById(R.id.save_button),toolbars.findViewById(R.id.brushing),toolbars.findViewById(R.id.undo_button),toolbars.findViewById(R.id.trashing)};
+        float translationY=view[0].getTranslationY();
+        int duration=200;
+        for (int i=0;i<4;i++)
+        {
+            ObjectAnimator translation = ObjectAnimator.ofFloat(view[i], View.TRANSLATION_Y, translationY,0);
+            ObjectAnimator sizeX = ObjectAnimator.ofFloat(view[i], View.SCALE_X, 0.5f, 1);
+            ObjectAnimator sizeY = ObjectAnimator.ofFloat(view[i], View.SCALE_Y, 0.5f, 1);
+            translation.setInterpolator(new OvershootInterpolator());
+            sizeX.setInterpolator(new OvershootInterpolator());
+            sizeY.setInterpolator(new OvershootInterpolator());
+            translation.setDuration(duration);
+            sizeX.setDuration(duration);
+            sizeY.setDuration(duration);
+            list.add(translation);
+            list.add(sizeX);
+            list.add(sizeY);
+        }
+        ObjectAnimator toolbar=ObjectAnimator.ofFloat(toolbars,View.ALPHA,0,1);
+        toolbar.setDuration(duration);
+        list.add(toolbar);
+        return list;
+    }
+
+    private void animateClosingOfTools()
+    {
+        AnimatorSet animatorSet=new AnimatorSet();
+        List<Animator> list=getListAnimationClose();
+        animatorSet.playTogether(list);
+        animatorSet.start();
+    }
+
+    private List<Animator> getListAnimationClose()
+    {
+        int[] cor=new int[2];
+        toolbars.findViewById(R.id.save_button).getLocationInWindow(cor);
+        List<Animator> list=new ArrayList<>();
+        View[] view={toolbars.findViewById(R.id.save_button),toolbars.findViewById(R.id.brushing),toolbars.findViewById(R.id.undo_button),toolbars.findViewById(R.id.trashing)};
+        int duration=200;
+        for (int i=0;i<4;i++)
+        {
+            ObjectAnimator translation = ObjectAnimator.ofFloat(view[i], View.TRANSLATION_Y, 0, getWindow().getDecorView().getHeight() - cor[1]);
+            ObjectAnimator sizeX = ObjectAnimator.ofFloat(view[i], View.SCALE_X, 1.0f, 0.5f);
+            ObjectAnimator sizeY = ObjectAnimator.ofFloat(view[i], View.SCALE_Y, 1.0f, 0.5f);
+            translation.setInterpolator(new OvershootInterpolator());
+            sizeX.setInterpolator(new OvershootInterpolator());
+            sizeY.setInterpolator(new OvershootInterpolator());
+            translation.setDuration(duration);
+            sizeX.setDuration(duration);
+            sizeY.setDuration(duration);
+            list.add(translation);
+            list.add(sizeX);
+            list.add(sizeY);
+        }
+        ObjectAnimator toolbar=ObjectAnimator.ofFloat(toolbars,View.ALPHA,1,0);
+        toolbar.setDuration(duration);
+        list.add(toolbar);
+        return list;
     }
 
 
@@ -470,5 +572,8 @@ public class DrawingScene extends FragmentActivity
         }
     }
 
-
+    public void colorList(View view)
+    {
+        drawingView.colorList();
+    }
 }

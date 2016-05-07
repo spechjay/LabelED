@@ -66,10 +66,6 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap,Void,Void>
         {
             e.printStackTrace();
         }
-        Intent intent=new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        Uri uri=Uri.fromFile(new File(publicPath));
-        intent.setData(uri);
-        context.sendBroadcast(intent);
         return null;
     }
 

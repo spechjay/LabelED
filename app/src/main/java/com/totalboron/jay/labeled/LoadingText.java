@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -21,30 +22,31 @@ import java.util.List;
 /**
  * Created by Jay on 19/04/16.
  */
-public class LoadingText extends AsyncTask<File,Void,List<String>>
+public class LoadingText extends AsyncTask<File, Void, List<String>>
 {
     private Context context;
-    private String logging=getClass().getSimpleName();
+    private String logging = getClass().getSimpleName();
     private TableLayout tableLayout;
+
     public LoadingText(Context context, TableLayout tableLayout)
     {
 
         this.context = context;
-        this.tableLayout=tableLayout;
+        this.tableLayout = tableLayout;
     }
 
     @Override
     protected List<String> doInBackground(File... params)
     {
-        List<String> str=new ArrayList<>();
+        List<String> str = new ArrayList<>();
         try
         {
             String inputString;
-            BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(new FileInputStream(params[0])));
-            while ((inputString=bufferedReader.readLine())!=null)
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(params[0])));
+            while ((inputString = bufferedReader.readLine()) != null)
             {
                 str.add(inputString);
-                Log.d(logging,inputString);
+                Log.d(logging, inputString);
             }
         } catch (IOException e)
         {
@@ -56,43 +58,44 @@ public class LoadingText extends AsyncTask<File,Void,List<String>>
     @Override
     protected void onPostExecute(List<String> strings)
     {
-        int cnum=context.getResources().getConfiguration().orientation== Configuration.ORIENTATION_PORTRAIT?3:5;
+        int cnum = 2;
         float textSize;
-        if (cnum==3)
-            textSize=16;
-        else textSize=22;
-
-        if (strings!=null&&!isCancelled())
+        textSize = 13;
+        if (strings != null && !isCancelled())
         {
-            TableLayout.LayoutParams tableRowParams=new TableLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            TableRow tableRow=new TableRow(context);
+            TableLayout.LayoutParams tableRowParams = new TableLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,1.0f);
+//            tableRowParams.gravity=Gravity.CENTER;
+            TableRow tableRow = new TableRow(context);
             tableRow.setLayoutParams(tableRowParams);
             TextView textView;
-            int color=context.getResources().getColor(R.color.black);
-            TableRow.LayoutParams textViewLayoutParams=new TableRow.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,1.0f);
+            int color = context.getResources().getColor(R.color.black);
+            TableRow.LayoutParams textViewLayoutParams = new TableRow.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.5f);
             tableLayout.addView(tableRow);
-            int row=0;
-            for (int i=0;i<strings.size();i++)
+            int row = 0;
+            int index=0;
+            for (int i = 0; i < strings.size(); i++)
             {
-                textView=new TextView(context);
+                if (index % cnum == 0)
+                {
+                    row++;
+                    tableRow = new TableRow(context);
+                    tableRow.setLayoutParams(tableRowParams);
+                    tableLayout.addView(tableRow);
+                    if (row > 2) break;
+                }
+                textView = new TextView(context);
                 textView.setLayoutParams(textViewLayoutParams);
                 textView.setGravity(Gravity.CENTER);
                 textView.setTextColor(color);
                 textView.setTextSize(textSize);
+                if (strings.get(i).equals(""))continue;
                 textView.setText(strings.get(i));
-                if (i%cnum==0)
-                {
-                    row++;
-                    tableRow=new TableRow(context);
-                    tableRow.setLayoutParams(tableRowParams);
-                    tableLayout.addView(tableRow);
-                    if (row>3) break;
-                }
+                index++;
                 tableRow.addView(textView);
             }
-            if (row>3)
+            if (row > 2)
             {
-                textView=new TextView(context);
+                textView = new TextView(context);
                 textView.setLayoutParams(textViewLayoutParams);
                 textView.setGravity(Gravity.CENTER);
                 textView.setTextColor(color);

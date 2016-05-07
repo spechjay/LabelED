@@ -10,5 +10,5 @@
     <color name="holo_green_dark">#ff669900</color>
     <color name="holo_blue_dark">#ff0099cc</color>
     <color name="card_view_contrast">#CDCDCD</color>
-
+    <color name="colorControlHighlight">#B6B6B6</color>
 </resources>
