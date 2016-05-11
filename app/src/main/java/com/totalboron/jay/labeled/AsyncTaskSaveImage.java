@@ -72,9 +72,11 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap,Void,Void>
     private void writeLabels(File file) throws IOException
     {
         BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+        DatabaseAdapter databaseAdapter=new DatabaseAdapter(context);
         for (int i=0;i<labels.size();i++)
         {
             bufferedWriter.write(labels.get(i));
+            databaseAdapter.insertData(labels.get(i),file.getName());
             bufferedWriter.newLine();
         }
         bufferedWriter.close();

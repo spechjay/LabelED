@@ -1,6 +1,7 @@
 package com.totalboron.jay.labeled;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -68,6 +69,12 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
     public int getItemCount()
     {
         return image_files==null?0:image_files.length;
+    }
+
+    public void addToDatabase()
+    {
+        DatabaseAdapter databaseAdapter=new DatabaseAdapter(context);
+        databaseAdapter.displayAll();
     }
 
     class CardAdapterHolder extends RecyclerView.ViewHolder

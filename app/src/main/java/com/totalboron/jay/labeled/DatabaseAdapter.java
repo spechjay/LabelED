@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -22,14 +23,15 @@ public class DatabaseAdapter
         this.context = context;
     }
 
-    public long insertData(String username, String password)
+    public long insertData(String label, String fileName)
     {
         SQLiteDatabase database = databaseHelper.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(DatabaseHelper.LABEL_NAME, username);
-        contentValues.put(DatabaseHelper.FILE_NAME, password);
+        contentValues.put(DatabaseHelper.LABEL_NAME, label);
+        contentValues.put(DatabaseHelper.FILE_NAME, fileName);
         return database.insert(DatabaseHelper.TABLE_NAME, null, contentValues);
     }
+
 
     public void displayAll()
     {
@@ -37,11 +39,12 @@ public class DatabaseAdapter
         String[] columns = {DatabaseHelper.UID, DatabaseHelper.FILE_NAME, DatabaseHelper.LABEL_NAME};
         Cursor cursor = database.query(DatabaseHelper.TABLE_NAME, columns, null, null, null, null, null);
         String message = "";
+        int i=0;
         while (cursor.moveToNext())
         {
-            message = message + cursor.getInt(0) + cursor.getString(2) + cursor.getString(1) + "\n";
+            i++;
         }
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+        Toast.makeText(context, i+"=total", Toast.LENGTH_LONG).show();
         cursor.close();
     }
     public void delete(String fileName)
@@ -50,6 +53,23 @@ public class DatabaseAdapter
         database.delete(DatabaseHelper.TABLE_NAME, DatabaseHelper.FILE_NAME+" = ? ",new String[]{fileName});
     }
 
+    public void getSearch(String search_hint)
+    {
+        SQLiteDatabase database = databaseHelper.getWritableDatabase();
+        String[] columns = {DatabaseHelper.FILE_NAME};
+        String query="SELECT "+DatabaseHelper.FILE_NAME+" FROM "+DatabaseHelper.TABLE_NAME+" WHERE "+DatabaseHelper.LABEL_NAME+" LIKE '%"+search_hint+"%';";
+        Cursor cursor=database.rawQuery(query,null);
+        String message = "";
+        if (cursor != null)
+        {
+            while (cursor.moveToNext())
+            {
+                message=message+cursor.getString(0)+"\n";
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            cursor.close();
+        }
+    }
 
 
     public void getFileName(String labelName)
