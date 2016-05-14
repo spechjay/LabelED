@@ -46,7 +46,6 @@ public class DrawingScene extends FragmentActivity
 {
     private boolean isFragmentPresent = false;
     private String logging = getClass().getSimpleName();
-    private final String TAG_FOR_FRAGMENT = "LabelView";
     private DrawingView drawingView;
     private String filePath;
     private int imageHeight = 0;
@@ -65,8 +64,8 @@ public class DrawingScene extends FragmentActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawing_scene);
-        edit_text_tray=(LinearLayoutCustom)findViewById(R.id.edit_text_tray);
-        editText=(EditText)edit_text_tray.findViewById(R.id.edit_text);
+        edit_text_tray = (LinearLayoutCustom) findViewById(R.id.edit_text_tray);
+        editText = (EditText) edit_text_tray.findViewById(R.id.edit_text);
         Intent intent = getIntent();
         if (intent.getAction().equals("Main_Activity"))
         {
@@ -111,7 +110,7 @@ public class DrawingScene extends FragmentActivity
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
             {
-                if (actionId== EditorInfo.IME_ACTION_SEND)
+                if (actionId == EditorInfo.IME_ACTION_SEND)
                     messageReceiver(null);
                 return false;
             }
@@ -187,8 +186,8 @@ public class DrawingScene extends FragmentActivity
     {
         edit_text_tray.setVisibility(View.VISIBLE);
         isFragmentPresent = true;
-        InputMethodManager inputMethodManager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodManager.showSoftInput(editText,InputMethodManager.SHOW_IMPLICIT);
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_FORCED);
     }
 
 
@@ -198,13 +197,11 @@ public class DrawingScene extends FragmentActivity
         Log.d(logging, "in onKeyDown");
         if (isFragmentPresent == true)
         {
-            if (getCurrentFocus() != null)
-            {
-                removeKeyboard();
-            }
+            removeKeyboard();
             removeFragment();
             return true;
         }
+        drawingView.setSaving(true);
         return super.onKeyDown(keyCode, event);
     }
 
@@ -225,9 +222,6 @@ public class DrawingScene extends FragmentActivity
     }
 
 
-
-
-
     public void checkForOpenFragment()
     {
         if (isFragmentPresent)
@@ -235,40 +229,37 @@ public class DrawingScene extends FragmentActivity
     }
 
 
-
     public void messageReceiver(View view)
     {
-        String string=editText.getText().toString();
+        String string = editText.getText().toString();
         drawingView.messageRecieve(string);
         removeFragment();
     }
+
     public void loadImage()
     {
         int width = getWindow().getDecorView().getWidth();
         float aspectRatio = aspectRatioFind();
         int height = (int) (width * aspectRatio);
-        if (aspectRatio>=1)
+        if (aspectRatio >= 1)
         {
-            if (getResources().getConfiguration().orientation!= Configuration.ORIENTATION_PORTRAIT)
+            if (getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT)
             {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            }
-            else
+            } else
             {
                 setParams(width, height);
             }
-        }
-        else
+        } else
         {
-            if (getResources().getConfiguration().orientation!= Configuration.ORIENTATION_LANDSCAPE)
+            if (getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE)
             {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            }
-            else
+            } else
             {
-                height=getWindow().getDecorView().getHeight();
-                width=(int) (height/aspectRatio);
-                setParams(width,height);
+                height = getWindow().getDecorView().getHeight();
+                width = (int) (height / aspectRatio);
+                setParams(width, height);
             }
         }
     }
@@ -278,7 +269,7 @@ public class DrawingScene extends FragmentActivity
     {
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) drawingView.getLayoutParams();
         layoutParams.height = height;
-        layoutParams.width=width;
+        layoutParams.width = width;
         drawingView.setLayoutParams(layoutParams);
         drawingView.setDrawingScene(this);
         Glide.with(getApplicationContext()).load(filePath).into(drawingView);
@@ -309,7 +300,8 @@ public class DrawingScene extends FragmentActivity
         Bitmap bitmap = drawingView.getDrawingCache();
         Uri uri = Uri.parse(filePath);
         String fileName = uri.getLastPathSegment();
-        AsyncTaskSaveImage asyncTaskSaveImage = new AsyncTaskSaveImage(fileName, getApplicationContext(),drawingView.getTags_for_each_label());
+        drawingView.setSaving(true);
+        AsyncTaskSaveImage asyncTaskSaveImage = new AsyncTaskSaveImage(fileName, getApplicationContext(), drawingView.getTags_for_each_label());
         asyncTaskSaveImage.execute(Bitmap.createBitmap(bitmap));
         finish();
     }
@@ -365,7 +357,7 @@ public class DrawingScene extends FragmentActivity
 
     public void singleTapDone()
     {
-        if (toolbars.getAlpha()!= 1)
+        if (toolbars.getAlpha() != 1)
             toolsToggle(true);
         else toolsToggle(false);
     }
@@ -376,7 +368,7 @@ public class DrawingScene extends FragmentActivity
         {
             if (colorsBarOpen)
             {
-                ObjectAnimator objectAnimator=ObjectAnimator.ofFloat(linearLayout,View.ALPHA,0,1);
+                ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(linearLayout, View.ALPHA, 0, 1);
                 objectAnimator.setDuration(150);
                 objectAnimator.start();
             }
@@ -385,7 +377,7 @@ public class DrawingScene extends FragmentActivity
         {
             if (colorsBarOpen)
             {
-                ObjectAnimator objectAnimator=ObjectAnimator.ofFloat(linearLayout,View.ALPHA,1,0);
+                ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(linearLayout, View.ALPHA, 1, 0);
                 objectAnimator.setDuration(150);
                 objectAnimator.start();
             }
@@ -395,22 +387,48 @@ public class DrawingScene extends FragmentActivity
 
     private void animateOpeningOfTools()
     {
-        AnimatorSet animatorSet=new AnimatorSet();
-        List<Animator> list=getListAnimationOpen();
-        Log.d(logging,"Here in opening");
+        AnimatorSet animatorSet = new AnimatorSet();
+        List<Animator> list = getListAnimationOpen();
+        Log.d(logging, "Here in opening");
         animatorSet.playTogether(list);
+        animatorSet.addListener(new Animator.AnimatorListener()
+        {
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+                toolbars.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation)
+            {
+
+            }
+        });
         animatorSet.start();
     }
 
     private List<Animator> getListAnimationOpen()
     {
-        List<Animator> list=new ArrayList<>();
-        View[] view={toolbars.findViewById(R.id.save_button),toolbars.findViewById(R.id.brushing),toolbars.findViewById(R.id.undo_button),toolbars.findViewById(R.id.trashing)};
-        float translationY=view[0].getTranslationY();
-        int duration=200;
-        for (int i=0;i<4;i++)
+        List<Animator> list = new ArrayList<>();
+        View[] view = {toolbars.findViewById(R.id.save_button), toolbars.findViewById(R.id.brushing), toolbars.findViewById(R.id.undo_button), toolbars.findViewById(R.id.trashing)};
+        float translationY = view[0].getTranslationY();
+        int duration = 200;
+        for (int i = 0; i < 4; i++)
         {
-            ObjectAnimator translation = ObjectAnimator.ofFloat(view[i], View.TRANSLATION_Y, translationY,0);
+            ObjectAnimator translation = ObjectAnimator.ofFloat(view[i], View.TRANSLATION_Y, translationY, 0);
             ObjectAnimator sizeX = ObjectAnimator.ofFloat(view[i], View.SCALE_X, 0.5f, 1);
             ObjectAnimator sizeY = ObjectAnimator.ofFloat(view[i], View.SCALE_Y, 0.5f, 1);
             translation.setInterpolator(new OvershootInterpolator());
@@ -423,7 +441,7 @@ public class DrawingScene extends FragmentActivity
             list.add(sizeX);
             list.add(sizeY);
         }
-        ObjectAnimator toolbar=ObjectAnimator.ofFloat(toolbars,View.ALPHA,0,1);
+        ObjectAnimator toolbar = ObjectAnimator.ofFloat(toolbars, View.ALPHA, 0, 1);
         toolbar.setDuration(duration);
         list.add(toolbar);
         return list;
@@ -431,20 +449,46 @@ public class DrawingScene extends FragmentActivity
 
     private void animateClosingOfTools()
     {
-        AnimatorSet animatorSet=new AnimatorSet();
-        List<Animator> list=getListAnimationClose();
+        AnimatorSet animatorSet = new AnimatorSet();
+        List<Animator> list = getListAnimationClose();
         animatorSet.playTogether(list);
+        animatorSet.addListener(new Animator.AnimatorListener()
+        {
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+                toolbars.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation)
+            {
+
+            }
+        });
         animatorSet.start();
     }
 
     private List<Animator> getListAnimationClose()
     {
-        int[] cor=new int[2];
+        int[] cor = new int[2];
         toolbars.findViewById(R.id.save_button).getLocationInWindow(cor);
-        List<Animator> list=new ArrayList<>();
-        View[] view={toolbars.findViewById(R.id.save_button),toolbars.findViewById(R.id.brushing),toolbars.findViewById(R.id.undo_button),toolbars.findViewById(R.id.trashing)};
-        int duration=200;
-        for (int i=0;i<4;i++)
+        List<Animator> list = new ArrayList<>();
+        View[] view = {toolbars.findViewById(R.id.save_button), toolbars.findViewById(R.id.brushing), toolbars.findViewById(R.id.undo_button), toolbars.findViewById(R.id.trashing)};
+        int duration = 200;
+        for (int i = 0; i < 4; i++)
         {
             ObjectAnimator translation = ObjectAnimator.ofFloat(view[i], View.TRANSLATION_Y, 0, getWindow().getDecorView().getHeight() - cor[1]);
             ObjectAnimator sizeX = ObjectAnimator.ofFloat(view[i], View.SCALE_X, 1.0f, 0.5f);
@@ -459,7 +503,7 @@ public class DrawingScene extends FragmentActivity
             list.add(sizeX);
             list.add(sizeY);
         }
-        ObjectAnimator toolbar=ObjectAnimator.ofFloat(toolbars,View.ALPHA,1,0);
+        ObjectAnimator toolbar = ObjectAnimator.ofFloat(toolbars, View.ALPHA, 1, 0);
         toolbar.setDuration(duration);
         list.add(toolbar);
         return list;
@@ -521,9 +565,9 @@ public class DrawingScene extends FragmentActivity
     {
         if (how)
         {
-            int cx=linearLayout.getMeasuredWidth();
-            int cy=linearLayout.getMeasuredHeight();
-            if (Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP)
+            int cx = linearLayout.getMeasuredWidth();
+            int cy = linearLayout.getMeasuredHeight();
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP)
             {
                 Animator animator = ViewAnimationUtils.createCircularReveal(linearLayout, cx, cy, cx, 0);
                 animator.addListener(new Animator.AnimatorListener()
@@ -553,21 +597,18 @@ public class DrawingScene extends FragmentActivity
                     }
                 });
                 animator.start();
-            }
-            else linearLayout.setVisibility(View.INVISIBLE);
-        }
-        else
+            } else linearLayout.setVisibility(View.INVISIBLE);
+        } else
         {
-            int cx=linearLayout.getMeasuredWidth();
-            int cy=linearLayout.getMeasuredHeight();
-            if (Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP)
+            int cx = linearLayout.getMeasuredWidth();
+            int cy = linearLayout.getMeasuredHeight();
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP)
             {
                 Animator animator = ViewAnimationUtils.createCircularReveal(linearLayout, cx, cy, 0, cx);
                 linearLayout.setVisibility(View.VISIBLE);
                 animator.start();
-            }
-            else
-            linearLayout.setVisibility(View.VISIBLE);
+            } else
+                linearLayout.setVisibility(View.VISIBLE);
 
         }
     }

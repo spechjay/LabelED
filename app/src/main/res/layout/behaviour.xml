@@ -7,27 +7,22 @@
     android:layout_height="match_parent"
     android:background="@android:color/white">
 
-    <android.support.design.widget.AppBarLayout android:layout_width="match_parent"
-                                                android:layout_height="wrap_content"
-                                                android:id="@+id/appbarlayout"
-        >
+    <android.support.design.widget.AppBarLayout android:id="@+id/appbarlayout"
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content">
         <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar_index"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_marginTop="24dp"
-            android:id="@+id/toolbar"
-            android:background="@android:color/white"
-            android:visibility="invisible"
+            android:visibility="visible"
+            app:popupTheme="@style/AppTheme.PopupOverlay"
             app:layout_scrollFlags="scroll|enterAlways"/>
-
-
-
     </android.support.design.widget.AppBarLayout>
 
-    <android.support.v7.widget.RecyclerView android:layout_width="match_parent"
+    <android.support.v7.widget.RecyclerView android:id="@+id/recycler_view"
+                                            android:layout_width="match_parent"
                                             android:layout_height="match_parent"
-                                            android:id="@+id/recycler_view"
-                                            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    />
+                                            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
 </android.support.design.widget.CoordinatorLayout>

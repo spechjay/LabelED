@@ -1,45 +1,46 @@
 package com.totalboron.jay.labeled;
 
 import android.animation.Animator;
-import android.app.SearchManager;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SearchView;
-import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.AutoCompleteTextView;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity
@@ -50,29 +51,49 @@ public class MainActivity extends AppCompatActivity
     private AdapterForCardView adapterForCardView;
     private String logging = getClass().getSimpleName();
     private Toolbar toolbar;
-    private EditText search_edit_text;
+    private AutoCompleteTextView search_edit_text;
     private DatabaseAdapter databaseAdapter;
+    private File[] images_total = null;
+    private File[] labels_total = null;
+    private ImageView overview_image;
+    private TableLayout overview_table;
+    private RelativeLayout relativeLayout;
+    private MyRelativeLayout myRelativeLayout;
+
+    private int[] rect;
+    private int measuredHeight;
+    private int measuredWidth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.app_bar_main);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
+        relativeLayout = (RelativeLayout) findViewById(R.id.overview_whole);
+        myRelativeLayout=(MyRelativeLayout)findViewById(R.id.main_view_relative_layout);
+        myRelativeLayout.setMainActivity(this);
+        myRelativeLayout.setRelativeLayout(relativeLayout);
         if (toolbar != null)
         {
-            search_edit_text=(EditText)toolbar.findViewById(R.id.edit_text_search);
+            search_edit_text = (AutoCompleteTextView) toolbar.findViewById(R.id.edit_text_search);
             search_edit_text.setOnEditorActionListener(new TextView.OnEditorActionListener()
             {
                 @Override
                 public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
                 {
-                    if (actionId== EditorInfo.IME_ACTION_SEARCH)
+                    if (actionId == EditorInfo.IME_ACTION_SEARCH)
+                    {
+                        databaseAdapter.insertWordHistory(search_edit_text.getText().toString());
                         messageReceiver();
+                        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                        inputMethodManager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
+                    }
                     return false;
                 }
             });
         }
-        databaseAdapter=new DatabaseAdapter(getApplicationContext());
+        databaseAdapter = new DatabaseAdapter(getApplicationContext());
         recyclerView = (RecyclerView) findViewById(R.id.main_activity_recycler_view);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         assert fab != null;
@@ -89,29 +110,93 @@ public class MainActivity extends AppCompatActivity
         int cnum = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 2 : 3;
         gridLayoutManager = new GridLayoutManager(getApplicationContext(), cnum);
         recyclerView.setLayoutManager(gridLayoutManager);
-        adapterForCardView = new AdapterForCardView(getApplicationContext(), null, null);
+        adapterForCardView = new AdapterForCardView(getApplicationContext(), this);
         recyclerView.setAdapter(adapterForCardView);
-        AsyncTaskForInternalFiles asyncTaskForInternalFiles = new AsyncTaskForInternalFiles(getApplicationContext(), adapterForCardView, false);
-        asyncTaskForInternalFiles.execute();
-        Resetting resetting = Resetting.getInstance(getApplicationContext());
-        resetting.setAdapterForCardView(adapterForCardView);
+        search_edit_text.addTextChangedListener(new TextWatcher()
+        {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after)
+            {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count)
+            {
+
+                messageReceiver();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s)
+            {
+
+            }
+        });
+        overview_image = (ImageView) findViewById(R.id.overview_image);
+        overview_table = (TableLayout) findViewById(R.id.overview_table);
     }
 
     private void messageReceiver()
     {
-        String text=search_edit_text.getText().toString();
-        Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
-        InputMethodManager inputMethodManager=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(),0);
-        //Todo:Search In a different Thread For Files
-        databaseAdapter.getSearch(text);
+        String text = search_edit_text.getText().toString();
+        //Todo:Do this in a different thread here
+        Cursor cursor = databaseAdapter.getSearch(text);
+        if (cursor != null && cursor.getCount() > 0 && labels_total != null)
+        {
+            String label_name;
+            List<File> result_image = new ArrayList<>();
+            List<File> result_label = new ArrayList<>();
+            while (cursor.moveToNext())
+            {
+                label_name = cursor.getString(0);
+                int index = indexOf(labels_total, label_name);
+                if (index >= 0 && !checkForDuplicate(label_name, result_label))
+                {
+                    result_image.add(images_total[index]);
+                    result_label.add(labels_total[index]);
+                }
+            }
+            adapterForCardView.setFiles(result_label, result_image);
+        } else
+        {
+            adapterForCardView.setNull();
+        }
+        recyclerView.scrollToPosition(0);
     }
 
+    private boolean checkForDuplicate(String label_name, List<File> result_label)
+    {
+        if (result_label != null)
+        {
+            for (int i = 0; i < result_label.size(); i++)
+            {
+                if (result_label.get(i).getName().equals(label_name))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private int indexOf(File[] newList, String label)
+    {
+        for (int i = 0; i < newList.length; i++)
+        {
+            if (newList[i].getName().equals(label))
+                return i;
+        }
+        return -99;
+    }
 
     @Override
     protected void onResume()
     {
         super.onResume();
+        if (toolbar.findViewById(R.id.searchTool).getVisibility() == View.INVISIBLE)
+        {
+            AsyncTaskForInternalFiles asyncTaskForInternalFiles = new AsyncTaskForInternalFiles(getApplicationContext(), this);
+            asyncTaskForInternalFiles.execute();
+        }
     }
 
 
@@ -133,12 +218,19 @@ public class MainActivity extends AppCompatActivity
             {
                 ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                 search_edit_text.setText(result.get(0));
-                //Todo:Start the search here also
+                messageReceiver();
             }
         }
-
-
     }
+
+
+    public void fillUpRecyclerView(File[] images, File[] label)
+    {
+        images_total = images;
+        labels_total = label;
+        adapterForCardView.setFiles(new LinkedList<File>(Arrays.asList(label)), new LinkedList<File>(Arrays.asList(images)));
+    }
+
 
     public void removeAll(View view)
     {
@@ -148,6 +240,8 @@ public class MainActivity extends AppCompatActivity
 
     public void clickedSearch(View view)
     {
+        if (relativeLayout.getVisibility()==View.VISIBLE)
+        deflate();
         RelativeLayout searchTool = (RelativeLayout) toolbar.findViewById(R.id.searchTool);
         searchTool.setVisibility(View.VISIBLE);
         int cx = searchTool.getMeasuredWidth();
@@ -188,12 +282,14 @@ public class MainActivity extends AppCompatActivity
         } else searchTool.setVisibility(View.INVISIBLE);
     }
 
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
-        Log.d(logging, "Here");
-        if (toolbar.findViewById(R.id.searchTool).getVisibility() == View.VISIBLE)
+        if (relativeLayout.getVisibility() == View.VISIBLE)
+        {
+            deflate();
+            return true;
+        } else if (toolbar.findViewById(R.id.searchTool).getVisibility() == View.VISIBLE)
         {
             search_edit_text.setText("");
             toolbar.findViewById(R.id.initial).setVisibility(View.VISIBLE);
@@ -216,5 +312,64 @@ public class MainActivity extends AppCompatActivity
         {
             Toast.makeText(getApplicationContext(), "Speech Recognition not supported", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void Register(View view)
+    {
+        adapterForCardView.addToDatabase();
+    }
+
+    public void setUpOverview(File images, File label_files, int[] rect, int measuredHeight, int measuredWidth)
+    {
+        this.measuredHeight = measuredHeight;
+        this.measuredWidth = measuredWidth;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(images.getAbsolutePath(), options);
+        int width = options.outWidth;
+        int height = options.outHeight;
+        overview_image.setImageBitmap(null);
+        overview_table.removeAllViews();
+        float aspectRatio = ((float) height) / width;
+        Log.d(logging, aspectRatio + "");
+        if (aspectRatio >= 1)
+        {
+            int total_width = getWindow().getDecorView().getWidth();
+            int decided_width = (int) (total_width * 0.65);
+            ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
+            layoutParams.width = decided_width;
+            layoutParams.height = (int) (decided_width * aspectRatio);
+            overview_image.requestLayout();
+            overview_table.getLayoutParams().width = decided_width;
+            overview_table.requestLayout();
+        } else
+        {
+            int total_width = getWindow().getDecorView().getWidth();
+            int decided_width = (int) (total_width * 0.85);
+            ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
+            layoutParams.width = decided_width;
+            layoutParams.height = (int) (decided_width * aspectRatio);
+            overview_image.requestLayout();
+            overview_table.getLayoutParams().width = decided_width;
+            overview_table.requestLayout();
+
+        }
+        Glide.with(getApplicationContext()).load(images).into(overview_image);
+        this.rect=rect;
+        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table,this);
+        detailedLabelShow.execute(label_files);
+    }
+    public void inflate()
+    {
+        relativeLayout.setVisibility(View.VISIBLE);
+    }
+    public void deflate()
+    {
+        relativeLayout.setVisibility(View.INVISIBLE);
+    }
+
+    public void clickedOverviewImage(View view)
+    {
+        Log.d(logging,relativeLayout.getY()+"");
     }
 }

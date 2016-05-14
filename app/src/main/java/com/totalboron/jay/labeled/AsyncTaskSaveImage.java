@@ -39,9 +39,9 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap,Void,Void>
         {
             file.mkdirs();
         }
-        String publicPath=file.getAbsolutePath()+ "/"+fileName;
         long time=System.currentTimeMillis();
         fileName=getName(true,time);
+        String publicPath=file.getAbsolutePath()+ "/"+"LabelED"+time+fileName;
         File internal_save=context.getDir(context.getResources().getString(R.string.directory_images),Context.MODE_PRIVATE);
         File image=new File(internal_save,fileName);
         File internal_save_labels=context.getDir(context.getResources().getString(R.string.directory_labels),Context.MODE_PRIVATE);
@@ -66,6 +66,8 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap,Void,Void>
         {
             e.printStackTrace();
         }
+        Intent intent=new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(new File(publicPath)));
+        context.sendBroadcast(intent);
         return null;
     }
 
@@ -96,12 +98,5 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap,Void,Void>
             string+=fileName.substring(i);
         }
         return string;
-    }
-
-    @Override
-    protected void onPostExecute(Void aVoid)
-    {
-        Resetting resetting=Resetting.getInstance(context);
-        resetting.startRefresh();
     }
 }

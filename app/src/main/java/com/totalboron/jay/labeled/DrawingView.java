@@ -55,7 +55,7 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
     private List<String> tags_for_each_label;
     private List<Float> size_of_text;
     private int list_item;
-
+    private boolean saving=false;
     public DrawingView(Context context, AttributeSet attrs, int defStyleAttr)
     {
         super(context, attrs, defStyleAttr);
@@ -130,6 +130,7 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         Log.d("Sizing",tags_for_each_label.size()+"");
         bitmap = Bitmap.createBitmap(w, h == 0 ? 2 : h, Bitmap.Config.ARGB_8888);
         backupcanvas = new Canvas(bitmap);
+        if (!saving)
         drawBitmapPath();
     }
 
@@ -509,5 +510,10 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         {
             Log.d("colors",i+"="+colors.get(i));
         }
+    }
+
+    public void setSaving(boolean saving)
+    {
+        this.saving = saving;
     }
 }

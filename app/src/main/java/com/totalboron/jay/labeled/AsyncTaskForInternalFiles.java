@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 /**
@@ -18,16 +19,14 @@ import java.util.Arrays;
 public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
 {
     private Context context;
-    private AdapterForCardView adapterForCardView;
+    private WeakReference<MainActivity> weakReference;
     private File[] labels;
-    private boolean ifSaved;
     private String logging = getClass().getSimpleName();
 
-    public AsyncTaskForInternalFiles(Context context, AdapterForCardView adapterForCardView, boolean ifSaved)
+    public AsyncTaskForInternalFiles(Context context, MainActivity mainActivity)
     {
         this.context = context;
-        this.adapterForCardView = adapterForCardView;
-        this.ifSaved = ifSaved;
+        weakReference=new WeakReference<MainActivity>(mainActivity);
     }
 
     @Override
@@ -63,19 +62,9 @@ public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
     @Override
     protected void onPostExecute(File[] files)
     {
-        if (files != null)
+        if ((!isCancelled())&&files != null)
         {
-            adapterForCardView.setImage_files(files);
-            adapterForCardView.setStrings_of_files(labels);
-            if (ifSaved)
-            {
-                adapterForCardView.notifyItemInserted(0);
-                File file= new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),"LabelED");
-                Intent intent=new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file));
-                context.sendBroadcast(intent);
-            }
-            else
-                adapterForCardView.notifyDataSetChanged();
+            weakReference.get().fillUpRecyclerView(files,labels);
         }
     }
 }

@@ -42,7 +42,7 @@
                        android:paddingLeft="16dp"
                        android:src="@drawable/ic_arrow_back_black_24px"/>
 
-            <EditText android:layout_width="match_parent" android:layout_height="match_parent"
+            <AutoCompleteTextView android:layout_width="match_parent" android:layout_height="match_parent"
                       android:layout_gravity="center_vertical"
                       android:background="@android:color/transparent"
                       android:hint="Search"

@@ -33,8 +33,9 @@ public class ImageListActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.behaviour);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_index);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getWindow().getDecorView().setBackground(null);
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Intent intent = getIntent();
@@ -45,6 +46,11 @@ public class ImageListActivity extends AppCompatActivity
         checkForPermissions();
     }
 
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+    }
 
     private void loadEverything()
     {

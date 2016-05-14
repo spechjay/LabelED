@@ -46,7 +46,6 @@ public class LoadingText extends AsyncTask<File, Void, List<String>>
             while ((inputString = bufferedReader.readLine()) != null)
             {
                 str.add(inputString);
-                Log.d(logging, inputString);
             }
         } catch (IOException e)
         {
@@ -63,6 +62,7 @@ public class LoadingText extends AsyncTask<File, Void, List<String>>
         textSize = 13;
         if (strings != null && !isCancelled())
         {
+            strings.remove("");
             TableLayout.LayoutParams tableRowParams = new TableLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,1.0f);
 //            tableRowParams.gravity=Gravity.CENTER;
             TableRow tableRow = new TableRow(context);
@@ -88,7 +88,6 @@ public class LoadingText extends AsyncTask<File, Void, List<String>>
                 textView.setGravity(Gravity.CENTER);
                 textView.setTextColor(color);
                 textView.setTextSize(textSize);
-                if (strings.get(i).equals(""))continue;
                 textView.setText(strings.get(i));
                 index++;
                 tableRow.addView(textView);

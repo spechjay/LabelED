@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<com.totalboron.jay.labeled.MyRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:id="@+id/main_view_relative_layout"
     android:layout_height="match_parent"
     android:background="@color/card_view_contrast"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
@@ -13,6 +14,30 @@
                                             android:layout_width="match_parent"
                                             android:layout_height="match_parent"/>
     <Button android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:onClick="removeAll"
-            android:text="Remove All"/>
-</RelativeLayout>
+            android:layout_alignParentRight="true"
+            android:onClick="Register"
+            android:text="Register All"/>
+    <RelativeLayout android:id="@+id/overview_whole"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:clickable="true"
+                    android:visibility="invisible">
+        <ImageView android:id="@+id/overview_image" android:layout_width="30dp"
+                   android:layout_height="30dp"
+                           android:src="@drawable/ic_send_black_24dp"
+                   android:onClick="clickedOverviewImage"
+
+        />
+        <ScrollView android:layout_width="wrap_content"
+                    android:layout_below="@id/overview_image"
+                    android:layout_height="wrap_content">
+            <TableLayout android:id="@+id/overview_table"
+                         android:layout_width="10dp"
+                         android:layout_height="wrap_content"
+                         android:background="@color/white"
+                         android:paddingBottom="10dp"
+                         android:paddingTop="10dp"/>
+        </ScrollView>
+    </RelativeLayout>
+</com.totalboron.jay.labeled.MyRelativeLayout>

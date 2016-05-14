@@ -30,12 +30,10 @@ public class GalleryIndex extends AppCompatActivity
         Log.d(logging, "in onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.behaviour);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_index);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setTitle("Choose Image");
-        getWindow().getDecorView().setBackground(null);
+        getSupportActionBar().setTitle("Choose an Image");
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         setResult(RESULT_CANCELED);
         checkForPermissions();
