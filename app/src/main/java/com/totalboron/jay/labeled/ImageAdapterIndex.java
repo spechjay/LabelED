@@ -22,36 +22,46 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
     private int width_screen;
     private int cnum;
     private GalleryIndex galleryIndex;
-    public ImageAdapterIndex(List<String> bucket, List<String> data, int width, int cnum, GalleryIndex galleryIndex)
+    public ImageAdapterIndex(List<String> bucket, List<String> data, int cnum, GalleryIndex galleryIndex)
     {
         this.bucket = bucket;
         this.data = data;
-        width_screen=width;
         this.cnum=cnum;
         this.galleryIndex=galleryIndex;
+    }
+
+    public void setBucket(List<String> bucket,List<String> data,int width)
+    {
+        this.bucket = bucket;
+        this.data=data;
+        width_screen=width;
+        notifyDataSetChanged();
+    }
+
+    public void setData(List<String> data)
+    {
+        this.data = data;
     }
 
     @Override
     public Holder onCreateViewHolder(ViewGroup parent, int viewType)
     {
         View view= LayoutInflater.from(parent.getContext()).inflate(R.layout.item_display,parent,false);
-        Holder holder=new Holder(view);
-        return holder;
+        return new Holder(view);
     }
 
     @Override
-    public void onBindViewHolder(Holder holder, final int position)
+    public void onBindViewHolder(final Holder holder,int position)
     {
         ImageView imageView=holder.getImageView();
         Glide.with(imageView.getContext()).load(new File(data.get(position))).into(imageView);
         holder.setTextView(bucket.get(position));
-
         holder.getImageView().setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                galleryIndex.openImages(bucket.get(position));
+                galleryIndex.openImages(bucket.get(holder.getAdapterPosition()));
             }
         });
 
@@ -60,7 +70,7 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
     @Override
     public int getItemCount()
     {
-        return bucket.size();
+        return bucket!=null?bucket.size():0;
     }
 
     class Holder extends RecyclerView.ViewHolder

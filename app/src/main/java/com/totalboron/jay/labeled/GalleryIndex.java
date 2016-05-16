@@ -22,7 +22,7 @@ public class GalleryIndex extends AppCompatActivity
     final private int REQUEST_CODE_FOR_IMAGE = 75;
     private String logging = getClass().getSimpleName();
     private final int REQUEST_READ_STORAGE = 55;
-
+    private ImageAdapterIndex imageAdapterIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -35,6 +35,11 @@ public class GalleryIndex extends AppCompatActivity
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Choose an Image");
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        int cnum = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 2 : 4;
+        imageAdapterIndex = new ImageAdapterIndex(null, null, cnum, this);
+        recyclerView.setAdapter(imageAdapterIndex);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(getApplicationContext(), cnum);
+        recyclerView.setLayoutManager(gridLayoutManager);
         setResult(RESULT_CANCELED);
         checkForPermissions();
     }
@@ -79,16 +84,11 @@ public class GalleryIndex extends AppCompatActivity
 
     public void indexReady(List<String> bucket_list_names, List<String> data_each_bucket)
     {
-        int cnum = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 2 : 4;
-        ImageAdapterIndex imageAdapterIndex = new ImageAdapterIndex(bucket_list_names, data_each_bucket, getWindow().getDecorView().getWidth(), cnum, this);
-        recyclerView.setAdapter(imageAdapterIndex);
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(getApplicationContext(), cnum);
-        recyclerView.setLayoutManager(gridLayoutManager);
+        imageAdapterIndex.setBucket(bucket_list_names,data_each_bucket,getWindow().getDecorView().getWidth());
     }
     public void openImages(String bucket_name)
     {
         Intent intent = new Intent(this, ImageListActivity.class);
-        Log.d(logging, bucket_name + "=bucket");
         intent.putExtra("BUCKET", bucket_name);
         startActivityForResult(intent, REQUEST_CODE_FOR_IMAGE);
     }

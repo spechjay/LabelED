@@ -25,43 +25,93 @@
                       android:textStyle="bold"/>
             <ImageView android:layout_width="wrap_content" android:layout_height="match_parent"
                        android:layout_alignParentRight="true"
-                       android:paddingRight="15dp"
                        android:layout_centerVertical="true"
                        android:background="?attr/selectableItemBackgroundBorderless"
                        android:clickable="true"
                        android:onClick="clickedSearch"
+                       android:paddingRight="15dp"
                        android:src="@drawable/ic_search_white_24px"/>
         </RelativeLayout>
-        <RelativeLayout android:layout_width="match_parent"
+        <RelativeLayout android:id="@+id/searchTool"
+                        android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:id="@+id/searchTool"
                         android:background="@android:color/white"
-                        android:orientation="horizontal"
                         android:visibility="invisible">
             <ImageView android:layout_width="wrap_content" android:layout_height="match_parent"
                        android:paddingLeft="16dp"
+                       android:paddingStart="16dp"
                        android:src="@drawable/ic_arrow_back_black_24px"/>
 
-            <AutoCompleteTextView android:layout_width="match_parent" android:layout_height="match_parent"
-                      android:layout_gravity="center_vertical"
-                      android:background="@android:color/transparent"
-                      android:hint="Search"
-                      android:id="@+id/edit_text_search"
-                      android:imeOptions="actionSearch"
-                      android:inputType="textCapSentences"
-                      android:paddingLeft="72dp"
-                      android:textColor="@android:color/black"
-                      android:textColorHint="@color/greyForHighlight"/>
-            <ImageView android:layout_width="wrap_content" android:layout_height="match_parent"
+            <AutoCompleteTextView android:id="@+id/edit_text_search"
+                                  android:layout_width="match_parent"
+                                  android:layout_height="match_parent"
+                                  android:layout_gravity="center_vertical"
+                                  android:background="@android:color/transparent"
+                                  android:hint="Search"
+                                  android:imeOptions="actionSearch"
+                                  android:inputType="textCapSentences"
+                                  android:paddingLeft="72dp"
+                                  android:paddingStart="72dp"
+                                  android:textColor="@android:color/black"
+                                  android:textColorHint="@color/greyForHighlight"/>
+            <ImageView android:layout_width="48dp"
+                       android:layout_height="48dp"
+                       android:layout_alignParentEnd="true"
                        android:layout_alignParentRight="true"
-                       android:paddingRight="16dp"
-                       android:src="@drawable/ic_settings_voice_black_24px"
+                       android:layout_centerInParent="true"
                        android:background="?attr/selectableItemBackgroundBorderless"
                        android:clickable="true"
                        android:onClick="speechToText"
-
-            />
+                       android:paddingLeft="12dp"
+                       android:paddingRight="12dp"
+                       android:src="@drawable/ic_settings_voice_black_24px"/>
         </RelativeLayout>
+
+        <RelativeLayout android:id="@+id/selection_toolbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#757575"
+                        android:visibility="invisible">
+            <ImageView android:layout_width="wrap_content" android:layout_height="match_parent"
+                       android:paddingLeft="16dp"
+                       android:paddingStart="16dp"
+                       android:src="@drawable/back_white"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:layout_centerVertical="true"
+                      android:fontFamily="sans-serif-medium"
+                      android:id="@+id/text_selection"
+                      android:paddingLeft="48dp"
+                      android:paddingStart="48dp"
+                      android:text="1"
+                      android:textColor="@android:color/white"
+                      android:textSize="24sp"
+                      android:textStyle="italic"/>
+            <ImageView android:id="@+id/delete"
+                       android:layout_width="48dp"
+                       android:layout_height="48dp"
+                       android:layout_alignParentEnd="true"
+                       android:layout_alignParentRight="true"
+                       android:layout_centerVertical="true"
+                       android:layout_marginEnd="4dp"
+                       android:layout_marginRight="4dp"
+                       android:background="?attr/selectableItemBackgroundBorderless"
+                       android:clickable="true"
+                       android:paddingLeft="12dp"
+                       android:paddingRight="12dp"
+                       android:src="@drawable/ic_delete_white_48px"/>
+            <ImageView android:layout_width="48dp"
+                       android:layout_height="48dp"
+                       android:layout_centerVertical="true"
+                       android:layout_toLeftOf="@id/delete"
+                       android:layout_toStartOf="@id/delete"
+                       android:background="?attr/selectableItemBackgroundBorderless"
+                       android:clickable="true"
+                       android:paddingLeft="12dp"
+                       android:paddingRight="12dp"
+                       android:src="@drawable/ic_share_white_24px"/>
+
+        </RelativeLayout>
+
     </FrameLayout>
 
 </android.support.v7.widget.Toolbar>

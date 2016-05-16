@@ -1,14 +1,12 @@
 package com.totalboron.jay.labeled;
 
 import android.animation.Animator;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
+
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
-import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -21,7 +19,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
@@ -59,6 +56,7 @@ public class MainActivity extends AppCompatActivity
     private TableLayout overview_table;
     private RelativeLayout relativeLayout;
     private MyRelativeLayout myRelativeLayout;
+    private RelativeLayout selectionToolbar;
 
     private int[] rect;
     private int measuredHeight;
@@ -71,9 +69,10 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.app_bar_main);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         relativeLayout = (RelativeLayout) findViewById(R.id.overview_whole);
-        myRelativeLayout=(MyRelativeLayout)findViewById(R.id.main_view_relative_layout);
+        myRelativeLayout = (MyRelativeLayout) findViewById(R.id.main_view_relative_layout);
         myRelativeLayout.setMainActivity(this);
         myRelativeLayout.setRelativeLayout(relativeLayout);
+        selectionToolbar=(RelativeLayout)findViewById(R.id.selection_toolbar);
         if (toolbar != null)
         {
             search_edit_text = (AutoCompleteTextView) toolbar.findViewById(R.id.edit_text_search);
@@ -135,6 +134,7 @@ public class MainActivity extends AppCompatActivity
         });
         overview_image = (ImageView) findViewById(R.id.overview_image);
         overview_table = (TableLayout) findViewById(R.id.overview_table);
+        adapterForCardView.setNumberReference((TextView)selectionToolbar.findViewById(R.id.text_selection));
     }
 
     private void messageReceiver()
@@ -240,8 +240,8 @@ public class MainActivity extends AppCompatActivity
 
     public void clickedSearch(View view)
     {
-        if (relativeLayout.getVisibility()==View.VISIBLE)
-        deflate();
+        if (relativeLayout.getVisibility() == View.VISIBLE)
+            deflate();
         RelativeLayout searchTool = (RelativeLayout) toolbar.findViewById(R.id.searchTool);
         searchTool.setVisibility(View.VISIBLE);
         int cx = searchTool.getMeasuredWidth();
@@ -285,7 +285,12 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
-        if (relativeLayout.getVisibility() == View.VISIBLE)
+        if (adapterForCardView.isLongClicked())
+        {
+            adapterForCardView.removeAllSelection();
+            hideSelectionBar();
+            return true;
+        } else if (relativeLayout.getVisibility() == View.VISIBLE)
         {
             deflate();
             return true;
@@ -355,14 +360,16 @@ public class MainActivity extends AppCompatActivity
 
         }
         Glide.with(getApplicationContext()).load(images).into(overview_image);
-        this.rect=rect;
-        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table,this);
+        this.rect = rect;
+        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table, this);
         detailedLabelShow.execute(label_files);
     }
+
     public void inflate()
     {
         relativeLayout.setVisibility(View.VISIBLE);
     }
+
     public void deflate()
     {
         relativeLayout.setVisibility(View.INVISIBLE);
@@ -370,6 +377,16 @@ public class MainActivity extends AppCompatActivity
 
     public void clickedOverviewImage(View view)
     {
-        Log.d(logging,relativeLayout.getY()+"");
+        Log.d(logging, relativeLayout.getY() + "");
+    }
+
+    public void showSelectionBar()
+    {
+        selectionToolbar.setVisibility(View.VISIBLE);
+    }
+
+    public void hideSelectionBar()
+    {
+        selectionToolbar.setVisibility(View.INVISIBLE);
     }
 }
