@@ -110,7 +110,7 @@
     </LinearLayout>
     <com.totalboron.jay.labeled.LinearLayoutCustom android:id="@+id/edit_text_tray"
                                                    android:layout_width="match_parent"
-                                                   android:layout_height="40dp"
+                                                   android:layout_height="48dp"
                                                    android:layout_marginEnd="@dimen/margin_of_edit_text"
                                                    android:layout_marginLeft="@dimen/margin_of_edit_text"
                                                    android:layout_marginRight="@dimen/margin_of_edit_text"
@@ -119,7 +119,7 @@
                                                    android:orientation="horizontal"
                                                    android:visibility="invisible">
         <EditText android:id="@+id/edit_text" android:layout_width="0dp"
-                  android:layout_height="wrap_content"
+                  android:layout_height="48dp"
                   android:layout_marginLeft="4dp"
                   android:gravity="center_vertical"
                   android:layout_marginStart="4dp"
@@ -131,9 +131,14 @@
                   android:imeOptions="actionSend"
                   android:layout_weight="1"/>
 
-        <ImageView android:id="@+id/button_for_edit_text" android:layout_width="35dp"
-                   android:layout_height="40dp"
+        <ImageView android:id="@+id/button_for_edit_text" android:layout_width="48dp"
+                   android:layout_height="48dp"
                    android:src="@drawable/ic_send_black_24dp"
+                   android:layout_marginLeft="8dp"
+                   android:layout_marginStart="8dp"
+                   android:paddingLeft="12dp"
+                   android:paddingRight="12dp"
+                   android:background="@drawable/label_send"
                    android:onClick="messageReceiver"/>
 
     </com.totalboron.jay.labeled.LinearLayoutCustom>

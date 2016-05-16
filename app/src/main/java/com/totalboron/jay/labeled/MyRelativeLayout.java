@@ -13,8 +13,9 @@ import android.widget.RelativeLayout;
 public class MyRelativeLayout extends RelativeLayout
 {
     private RelativeLayout relativeLayout = null;
-    private Rect rect=new Rect();
-    private MainActivity mainActivity=null;
+    private Rect rect = new Rect();
+    private MainActivity mainActivity = null;
+
     public MyRelativeLayout(Context context)
     {
         super(context);
@@ -39,8 +40,12 @@ public class MyRelativeLayout extends RelativeLayout
     public boolean onInterceptTouchEvent(MotionEvent ev)
     {
         if (relativeLayout != null && relativeLayout.getVisibility() == VISIBLE)
-            return true;
-        else
+        {
+            relativeLayout.getHitRect(rect);
+            if (!rect.contains((int) ev.getX(), (int) ev.getY()))
+                return true;
+            return false;
+        } else
             return super.onInterceptTouchEvent(ev);
     }
 
@@ -50,14 +55,14 @@ public class MyRelativeLayout extends RelativeLayout
         if (relativeLayout != null && relativeLayout.getVisibility() == VISIBLE)
         {
             relativeLayout.getHitRect(rect);
-            if (!rect.contains((int)event.getX(),(int)event.getY()))
+            if (!rect.contains((int) event.getX(), (int) event.getY()))
             {
+
                 mainActivity.deflate();
                 return true;
             }
-            else Log.d("Sizing",relativeLayout.getY()+"");
         }
-            return super.onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     public void setMainActivity(MainActivity mainActivity)

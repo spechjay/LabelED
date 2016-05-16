@@ -56,6 +56,7 @@ public class DatabaseAdapter
     public Cursor getSearch(String search_hint)
     {
         SQLiteDatabase database = databaseHelper.getWritableDatabase();
+        //ToDo: standardize and list the Cursor alphabetically
         String query="SELECT "+DatabaseHelper.FILE_NAME+" FROM "+DatabaseHelper.TABLE_NAME+" WHERE "+DatabaseHelper.LABEL_NAME+" LIKE '%"+search_hint+"%';";
         return database.rawQuery(query,null);
     }
@@ -64,6 +65,13 @@ public class DatabaseAdapter
     public long insertWordHistory(String word)
     {
         SQLiteDatabase database = databaseHelper.getWritableDatabase();
+        Cursor cursor=database.query(DatabaseHelper.HISTORY_TABLE,new String[]{DatabaseHelper.HISTORY_WORDS},DatabaseHelper.HISTORY_WORDS+" = ?",new String[]{word},null,null,null);
+        if (cursor!=null&&cursor.getCount()>0)
+        {
+            cursor.close();
+            return -99;
+        }
+        cursor.close();
         ContentValues contentValues = new ContentValues();
         contentValues.put(DatabaseHelper.HISTORY_WORDS,word);
         return database.insert(DatabaseHelper.HISTORY_TABLE, null, contentValues);
@@ -75,6 +83,11 @@ public class DatabaseAdapter
         return database.rawQuery(query,null);
     }
 
+    public void removeFiles(String name)
+    {
+        SQLiteDatabase database = databaseHelper.getWritableDatabase();
+        database.delete(DatabaseHelper.TABLE_NAME,DatabaseHelper.FILE_NAME +" = ?",new String[]{name});
+    }
 
 
 //    public void getFileName(String labelName)

@@ -97,6 +97,7 @@
                        android:background="?attr/selectableItemBackgroundBorderless"
                        android:clickable="true"
                        android:paddingLeft="12dp"
+                       android:onClick="removeItems"
                        android:paddingRight="12dp"
                        android:src="@drawable/ic_delete_white_48px"/>
             <ImageView android:layout_width="48dp"
@@ -108,7 +109,8 @@
                        android:clickable="true"
                        android:paddingLeft="12dp"
                        android:paddingRight="12dp"
-                       android:src="@drawable/ic_share_white_24px"/>
+                       android:src="@drawable/ic_share_white_24px"
+            />
 
         </RelativeLayout>
 

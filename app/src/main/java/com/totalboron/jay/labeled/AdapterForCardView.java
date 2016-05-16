@@ -268,6 +268,20 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         this.numberReference = numberReference;
     }
 
+    public void getListItems(MainActivity mainActivity)
+    {
+        List<File> images_delete=new ArrayList<>();
+        List<File> labels_delete=new ArrayList<>();
+        int selectin=-1;
+        for (int i = 0; i < selection_list.size(); i++)
+        {
+            selectin=selection_list.get(i);
+            images_delete.add(image_files.get(selectin));
+            labels_delete.add(strings_of_files.get(selectin));
+        }
+        mainActivity.receiverOfSelection(images_delete,labels_delete);
+    }
+
     class CardAdapterHolder extends RecyclerView.ViewHolder
     {
         private TableLayout tableLayout;

@@ -22,6 +22,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
@@ -72,7 +73,7 @@ public class MainActivity extends AppCompatActivity
         myRelativeLayout = (MyRelativeLayout) findViewById(R.id.main_view_relative_layout);
         myRelativeLayout.setMainActivity(this);
         myRelativeLayout.setRelativeLayout(relativeLayout);
-        selectionToolbar=(RelativeLayout)findViewById(R.id.selection_toolbar);
+        selectionToolbar = (RelativeLayout) findViewById(R.id.selection_toolbar);
         if (toolbar != null)
         {
             search_edit_text = (AutoCompleteTextView) toolbar.findViewById(R.id.edit_text_search);
@@ -87,6 +88,7 @@ public class MainActivity extends AppCompatActivity
                         messageReceiver();
                         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                         inputMethodManager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
+                        return true;
                     }
                     return false;
                 }
@@ -134,7 +136,7 @@ public class MainActivity extends AppCompatActivity
         });
         overview_image = (ImageView) findViewById(R.id.overview_image);
         overview_table = (TableLayout) findViewById(R.id.overview_table);
-        adapterForCardView.setNumberReference((TextView)selectionToolbar.findViewById(R.id.text_selection));
+        adapterForCardView.setNumberReference((TextView) selectionToolbar.findViewById(R.id.text_selection));
     }
 
     private void messageReceiver()
@@ -142,7 +144,12 @@ public class MainActivity extends AppCompatActivity
         String text = search_edit_text.getText().toString();
         //Todo:Do this in a different thread here
         Cursor cursor = databaseAdapter.getSearch(text);
-        if (cursor != null && cursor.getCount() > 0 && labels_total != null)
+        if (text.length() <= 0)
+        {
+            if (labels_total!=null)
+            adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(labels_total)), new LinkedList<>(Arrays.asList(images_total)));
+            else adapterForCardView.setNull();
+        } else if (cursor != null && cursor.getCount() > 0 && labels_total != null)
         {
             String label_name;
             List<File> result_image = new ArrayList<>();
@@ -194,8 +201,7 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         if (toolbar.findViewById(R.id.searchTool).getVisibility() == View.INVISIBLE)
         {
-            AsyncTaskForInternalFiles asyncTaskForInternalFiles = new AsyncTaskForInternalFiles(getApplicationContext(), this);
-            asyncTaskForInternalFiles.execute();
+            updateFiles();
         }
     }
 
@@ -228,7 +234,7 @@ public class MainActivity extends AppCompatActivity
     {
         images_total = images;
         labels_total = label;
-        adapterForCardView.setFiles(new LinkedList<File>(Arrays.asList(label)), new LinkedList<File>(Arrays.asList(images)));
+        adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(label)), new LinkedList<>(Arrays.asList(images)));
     }
 
 
@@ -326,52 +332,87 @@ public class MainActivity extends AppCompatActivity
 
     public void setUpOverview(File images, File label_files, int[] rect, int measuredHeight, int measuredWidth)
     {
-        this.measuredHeight = measuredHeight;
-        this.measuredWidth = measuredWidth;
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(images.getAbsolutePath(), options);
-        int width = options.outWidth;
-        int height = options.outHeight;
-        overview_image.setImageBitmap(null);
-        overview_table.removeAllViews();
-        float aspectRatio = ((float) height) / width;
-        Log.d(logging, aspectRatio + "");
-        if (aspectRatio >= 1)
-        {
-            int total_width = getWindow().getDecorView().getWidth();
-            int decided_width = (int) (total_width * 0.65);
-            ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
-            layoutParams.width = decided_width;
-            layoutParams.height = (int) (decided_width * aspectRatio);
-            overview_image.requestLayout();
-            overview_table.getLayoutParams().width = decided_width;
-            overview_table.requestLayout();
-        } else
-        {
-            int total_width = getWindow().getDecorView().getWidth();
-            int decided_width = (int) (total_width * 0.85);
-            ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
-            layoutParams.width = decided_width;
-            layoutParams.height = (int) (decided_width * aspectRatio);
-            overview_image.requestLayout();
-            overview_table.getLayoutParams().width = decided_width;
-            overview_table.requestLayout();
 
-        }
-        Glide.with(getApplicationContext()).load(images).into(overview_image);
-        this.rect = rect;
-        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table, this);
-        detailedLabelShow.execute(label_files);
+//        this.measuredHeight = measuredHeight;
+//        this.measuredWidth = measuredWidth;
+//        BitmapFactory.Options options = new BitmapFactory.Options();
+//        options.inJustDecodeBounds = true;
+//        BitmapFactory.decodeFile(images.getAbsolutePath(), options);
+//        int width = options.outWidth;
+//        int height = options.outHeight;
+//        overview_image.setImageBitmap(null);
+//        overview_table.removeAllViews();
+//        float aspectRatio = ((float) height) / width;
+//        Log.d(logging, aspectRatio + "");
+//        int orientation = getResources().getConfiguration().orientation;
+//        if (aspectRatio >= 1)
+//        {
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+//            {
+//                setOverViewLayoutForLandscape(0.85f, aspectRatio);
+//            } else
+//                setOverViewLayoutForPortrait(0.65f, aspectRatio);
+//        } else
+//        {
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+//            {
+//                setOverViewLayoutForLandscape(0.75f, aspectRatio);
+//            } else
+//                setOverViewLayoutForPortrait(0.85f, aspectRatio);
+//        }
+//        Glide.with(getApplicationContext()).load(images).into(overview_image);
+//        this.rect = rect;
+        MyDialog myDialog=new MyDialog(this,images,label_files);
+        Window window=myDialog.getWindow();
+        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
+        myDialog.show();
+    }
+
+    private void setOverViewLayoutForPortrait(float percentage, float aspectRatio)
+    {
+        int total_width = getWindow().getDecorView().getWidth();
+        int total_height = myRelativeLayout.getHeight();
+        int decided_width = (int) (total_width * percentage);
+        ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
+        layoutParams.width = decided_width;
+        layoutParams.height = (int) (decided_width * aspectRatio);
+        overview_image.requestLayout();
+        ViewGroup.LayoutParams tableParams = overview_table.getLayoutParams();
+        tableParams.width = decided_width;
+        float leftHeight = total_height - decided_width * aspectRatio;
+        float using_height = overview_table.getHeight();
+        if (using_height > leftHeight)
+            tableParams.height = (int) (0.9 * leftHeight);
+        overview_table.requestLayout();
+    }
+
+    private void setOverViewLayoutForLandscape(float percentage, float aspectRatio)
+    {
+        int total_height = myRelativeLayout.getHeight();
+        float decided_height = total_height * percentage;
+        int decided_width = (int) (decided_height / aspectRatio);
+        ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
+        layoutParams.height = (int) decided_height;
+        layoutParams.width = decided_width;
+        overview_image.requestLayout();
+        ViewGroup.LayoutParams tableParams = overview_table.getLayoutParams();
+        tableParams.width = decided_width;
+        float usingHeight = overview_table.getHeight();
+        float leftHeight = total_height * (1 - percentage);
+        if (usingHeight > leftHeight)
+            tableParams.height = (int) (total_height * (1 - percentage - 0.04));
+        overview_table.requestLayout();
     }
 
     public void inflate()
     {
+        //ToDo:Add an animation here
         relativeLayout.setVisibility(View.VISIBLE);
     }
 
     public void deflate()
     {
+        //ToDo:Add an animation here also
         relativeLayout.setVisibility(View.INVISIBLE);
     }
 
@@ -388,5 +429,24 @@ public class MainActivity extends AppCompatActivity
     public void hideSelectionBar()
     {
         selectionToolbar.setVisibility(View.INVISIBLE);
+    }
+
+    public void removeItems(View view)
+    {
+        adapterForCardView.getListItems(this);
+    }
+
+    public void receiverOfSelection(List<File> images_delete, List<File> labels_delete)
+    {
+        adapterForCardView.removeAllSelection();
+        hideSelectionBar();
+        DeleteFilesAsyncTask deleteFilesAsyncTask = new DeleteFilesAsyncTask(images_delete, this, databaseAdapter, getApplicationContext());
+        deleteFilesAsyncTask.execute(labels_delete);
+    }
+
+    public void updateFiles()
+    {
+        AsyncTaskForInternalFiles asyncTaskForInternalFiles = new AsyncTaskForInternalFiles(getApplicationContext(), this);
+        asyncTaskForInternalFiles.execute();
     }
 }
