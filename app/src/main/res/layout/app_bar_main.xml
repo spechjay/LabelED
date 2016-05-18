@@ -56,6 +56,7 @@
                            android:paddingLeft="12dp"
                            android:paddingRight="12dp"
                            android:paddingStart="12dp"
+                           android:onClick="clickAPhoto"
                            android:src="@drawable/ic_add_a_photo_white_24px"
                 />
             </RelativeLayout>

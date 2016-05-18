@@ -121,7 +121,6 @@ public class DrawingScene extends FragmentActivity
     private void handleSendImages(Intent intent)
     {
         Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
-        Log.d(logging, uri.getPath());
         if (uri != null)
         {
             pathFromUri(uri);
@@ -131,7 +130,6 @@ public class DrawingScene extends FragmentActivity
 
     private void pathFromUri(Uri uri)
     {
-        Log.d(logging, "inUriPath");
         Cursor cursor = null;
         String[] projection = {MediaStore.Images.Media.DATA};
         cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, null);
@@ -184,7 +182,7 @@ public class DrawingScene extends FragmentActivity
 
     public void loadFragment(View view)
     {
-        ObjectAnimator animator=ObjectAnimator.ofFloat(edit_text_tray,View.ALPHA,0f,1f);
+        ObjectAnimator animator = ObjectAnimator.ofFloat(edit_text_tray, View.ALPHA, 0f, 1f);
         animator.addListener(new Animator.AnimatorListener()
         {
             @Override
@@ -235,7 +233,7 @@ public class DrawingScene extends FragmentActivity
     private void removeFragment()
     {
 
-        ObjectAnimator animator=ObjectAnimator.ofFloat(edit_text_tray,View.ALPHA,1f,0f);
+        ObjectAnimator animator = ObjectAnimator.ofFloat(edit_text_tray, View.ALPHA, 1f, 0f);
         animator.addListener(new Animator.AnimatorListener()
         {
             @Override

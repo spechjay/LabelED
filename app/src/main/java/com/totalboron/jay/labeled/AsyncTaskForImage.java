@@ -11,26 +11,40 @@ import java.lang.ref.WeakReference;
 /**
  * Created by Jay on 14/04/16.
  */
-public class AsyncTaskForImage extends AsyncTask<Void,Void,Cursor>
+public class AsyncTaskForImage extends AsyncTask<Void, Void, Cursor>
 {
-    private String[] bucket_name=new String[1];
+    private String[] bucket_name = new String[1];
     protected Context context;
     private ImageListActivity imageListActivity;
-    private String logging=getClass().getSimpleName();
+    private String logging = getClass().getSimpleName();
+    private boolean all_pictures = false;
+
     public AsyncTaskForImage(String bucket_name, Context context, ImageListActivity imageListActivity)
     {
         this.bucket_name[0] = bucket_name;
         this.context = context;
-        this.imageListActivity=imageListActivity;
+        this.imageListActivity = imageListActivity;
     }
+
+    public void setAll_pictures(boolean all_pictures)
+    {
+        this.all_pictures = all_pictures;
+    }
+
     @Override
     protected Cursor doInBackground(Void... params)
     {
-        String[] projections={MediaStore.Images.Media.DATA};
-        Cursor images=context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,projections, MediaStore.Images.Media.BUCKET_DISPLAY_NAME+" = ?",
-                bucket_name, MediaStore.Images.Media.DATE_ADDED+" DESC");
-        if (images!=null)
-        return images;
+        String[] projections = {MediaStore.Images.Media.DATA};
+        Cursor images;
+        if (all_pictures)
+        {
+            images = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projections, null,
+                    null, MediaStore.Images.Media.DATE_ADDED + " DESC");
+        } else
+            images = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projections, MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?",
+                    bucket_name, MediaStore.Images.Media.DATE_ADDED + " DESC");
+        if (images != null)
+            return images;
         else return null;
     }
 

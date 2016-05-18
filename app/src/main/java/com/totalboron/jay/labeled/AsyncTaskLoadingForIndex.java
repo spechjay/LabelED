@@ -28,6 +28,13 @@ public class AsyncTaskLoadingForIndex extends AsyncTask<Void,Void,List<String>>
         String[] projections={MediaStore.Images.Media.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
         Cursor image_total=context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,projections,null,null, MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
         List<String> bucket_names_list= new ArrayList<>();
+        if (image_total.getCount()>0)
+        {
+            bucket_names_list.add("All Pictures");
+            Cursor total=context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,new String[]{MediaStore.Images.Media.DATA},null,null, MediaStore.Images.Media.DATE_ADDED+" DESC");
+            total.moveToFirst();
+            data_each_bucket.add(new File(total.getString(0)));
+        }
         if (image_total!=null)
         {
             int data_index=image_total.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);

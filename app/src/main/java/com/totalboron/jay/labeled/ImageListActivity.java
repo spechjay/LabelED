@@ -27,7 +27,7 @@ public class ImageListActivity extends AppCompatActivity
     private String logging = getClass().getSimpleName();
     private String bucket_name;
     private final int REQUEST_READ_STORAGE = 55;
-
+    private boolean allPicturesSelected=false;
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -40,6 +40,7 @@ public class ImageListActivity extends AppCompatActivity
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Intent intent = getIntent();
         bucket_name = intent.getStringExtra("BUCKET");
+        allPicturesSelected=intent.getBooleanExtra("All",false);
         getSupportActionBar().setTitle(bucket_name);
         cnum = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 3 : 5;
         setResult(RESULT_CANCELED);
@@ -55,6 +56,7 @@ public class ImageListActivity extends AppCompatActivity
     private void loadEverything()
     {
         AsyncTaskForImage asyncTaskForImage = new AsyncTaskForImage(bucket_name, getApplicationContext(), this);
+        asyncTaskForImage.setAll_pictures(allPicturesSelected);
         asyncTaskForImage.execute();
     }
 

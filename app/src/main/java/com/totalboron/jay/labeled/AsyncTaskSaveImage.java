@@ -17,7 +17,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class AsyncTaskSaveImage extends AsyncTask<Bitmap, Void, Void>
 {
@@ -51,7 +54,7 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap, Void, Void>
         {
             file.mkdirs();
         }
-        long time = System.currentTimeMillis();
+        String time=new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());;
         String publicPath = file.getAbsolutePath() + "/" + "LabelED" + time + fileName;
         File internal_save=new File(context.getFilesDir(),context.getResources().getString(R.string.directory_images));
         if (!internal_save.exists())
@@ -101,7 +104,7 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap, Void, Void>
         bufferedWriter.close();
     }
 
-    private void getName(long time)
+    private void getName(String time)
     {
         String string = "";
         int i;

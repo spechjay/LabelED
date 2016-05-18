@@ -103,4 +103,12 @@ public class GalleryIndex extends AppCompatActivity
         }
 
     }
+
+    public void openAllImages()
+    {
+        Intent intent = new Intent(this, ImageListActivity.class);
+        intent.putExtra("BUCKET", "All Pictures");
+        intent.putExtra("All",true);
+        startActivityForResult(intent, REQUEST_CODE_FOR_IMAGE);
+    }
 }

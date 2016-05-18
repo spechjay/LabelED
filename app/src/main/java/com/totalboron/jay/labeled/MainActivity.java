@@ -1,18 +1,23 @@
 package com.totalboron.jay.labeled;
 
+import android.Manifest;
 import android.animation.Animator;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.FileProvider;
@@ -41,9 +46,10 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 
 import java.io.File;
-import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -73,6 +79,9 @@ public class MainActivity extends AppCompatActivity
     private int measuredWidth;
     private boolean animationGoing = false;
     private int REQUEST_CODE_SHARE = 94;
+    private int REQUEST_READ_STORAGE = 53;
+    private int GET_IMAGE = 88;
+    private String sent_path;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -152,6 +161,13 @@ public class MainActivity extends AppCompatActivity
         overview_image = (ImageView) findViewById(R.id.overview_image);
         overview_table = (TableLayout) findViewById(R.id.overview_table);
         adapterForCardView.setNumberReference((TextView) selectionToolbar.findViewById(R.id.text_selection));
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState)
+    {
+        sent_path = savedInstanceState.getString("PATH");
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     private void messageReceiver()
@@ -245,6 +261,15 @@ public class MainActivity extends AppCompatActivity
         {
             adapterForCardView.removeAllSelection();
             hideSelectionBar();
+        } else if (requestCode == GET_IMAGE && resultCode == RESULT_OK)
+        {
+            Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+            mediaScanIntent.setData(Uri.fromFile(new File(sent_path)));
+            this.sendBroadcast(mediaScanIntent);
+            Intent intent = new Intent(this, DrawingScene.class);
+            intent.setAction("Main_Activity");
+            intent.putExtra("PATH", sent_path);
+            startActivity(intent);
         }
     }
 
@@ -639,24 +664,24 @@ public class MainActivity extends AppCompatActivity
         //ToDo: Create Uri for all the files
         if (images_delete.size() == 1)
         {
-            Uri fileUri=FileProvider.getUriForFile(this,"com.totalboron.jay.labeled.MainActivity",images_delete.get(0));
-            Intent shareIntent=ShareCompat.IntentBuilder.from(this).setStream(fileUri).setType("image/*").getIntent();
+            Uri fileUri = FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", images_delete.get(0));
+            Intent shareIntent = ShareCompat.IntentBuilder.from(this).setStream(fileUri).setType("image/*").getIntent();
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            if (shareIntent.resolveActivity(getPackageManager())!=null)
-                startActivityForResult(shareIntent,REQUEST_CODE_SHARE);
+            if (shareIntent.resolveActivity(getPackageManager()) != null)
+                startActivityForResult(shareIntent, REQUEST_CODE_SHARE);
         } else
         {
-            ShareCompat.IntentBuilder intentBuilder=ShareCompat.IntentBuilder.from(this).setType("image/*");
+            ShareCompat.IntentBuilder intentBuilder = ShareCompat.IntentBuilder.from(this).setType("image/*");
             for (int i = 0; i < images_delete.size(); i++)
             {
                 intentBuilder.addStream(FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", images_delete.get(i)));
             }
-            Log.d(logging,"In Multiple");
-            Intent shareIntent=intentBuilder.getIntent();
+            Log.d(logging, "In Multiple");
+            Intent shareIntent = intentBuilder.getIntent();
 
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            if (shareIntent.resolveActivity(getPackageManager())!=null)
-                startActivityForResult(shareIntent,REQUEST_CODE_SHARE);
+            if (shareIntent.resolveActivity(getPackageManager()) != null)
+                startActivityForResult(shareIntent, REQUEST_CODE_SHARE);
         }
     }
 
@@ -690,5 +715,69 @@ public class MainActivity extends AppCompatActivity
     public void closeSearchBar(View view)
     {
         closeSearchingToolbar();
+    }
+
+    public void clickAPhoto(View view)
+    {
+        checkForPermissions();
+    }
+
+    private void loadEverything()
+    {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, getFileUri());
+        startActivityForResult(intent, GET_IMAGE);
+    }
+
+    private Uri getFileUri()
+    {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera");
+        if (!file.exists())
+            file.mkdirs();
+        file = new File(file, "IMG_" + timeStamp + ".jpg");
+        sent_path = file.getAbsolutePath();
+        return Uri.fromFile(file);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+        outState.putString("PATH", sent_path);
+        super.onSaveInstanceState(outState);
+    }
+
+    private void checkForPermissions()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            {
+                loadEverything();
+            } else
+            {
+                if (shouldShowRequestPermissionRationale(android.Manifest.permission.READ_EXTERNAL_STORAGE))
+                {
+                    Toast.makeText(getApplicationContext(), "Read and Write Access required to click Image", Toast.LENGTH_SHORT).show();
+                }
+                requestPermissions(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_READ_STORAGE);
+            }
+        else loadEverything();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            if (requestCode == REQUEST_READ_STORAGE)
+            {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED)
+                    loadEverything();
+                else
+                {
+                    Toast.makeText(getApplicationContext(), "Permission not granted", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            }
     }
 }

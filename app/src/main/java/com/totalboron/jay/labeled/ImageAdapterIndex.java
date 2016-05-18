@@ -22,35 +22,36 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
     private int width_screen;
     private int cnum;
     private GalleryIndex galleryIndex;
+
     public ImageAdapterIndex(List<String> bucket, List<File> data, int cnum, GalleryIndex galleryIndex)
     {
         this.bucket = bucket;
         this.data = data;
-        this.cnum=cnum;
-        this.galleryIndex=galleryIndex;
+        this.cnum = cnum;
+        this.galleryIndex = galleryIndex;
     }
 
-    public void setBucket(List<String> bucket,List<File> data,int width)
+    public void setBucket(List<String> bucket, List<File> data, int width)
     {
         this.bucket = bucket;
-        this.data=data;
-        width_screen=width;
+        this.data = data;
+        width_screen = width;
         notifyDataSetChanged();
     }
 
     @Override
     public Holder onCreateViewHolder(ViewGroup parent, int viewType)
     {
-        View view= LayoutInflater.from(parent.getContext()).inflate(R.layout.item_display,parent,false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_display, parent, false);
         return new Holder(view);
     }
 
     @Override
-    public void onBindViewHolder(final Holder holder,int position)
+    public void onBindViewHolder(final Holder holder, int position)
     {
-        ImageView imageView=holder.getImageView();
+        ImageView imageView = holder.getImageView();
 
-        Glide.with(imageView.getContext()).load(data.get(position)).override(width_screen/cnum,width_screen/cnum).placeholder(R.drawable.placeholder).into(imageView);
+        Glide.with(imageView.getContext()).load(data.get(position)).override(width_screen / cnum, width_screen / cnum).placeholder(R.drawable.placeholder).into(imageView);
 
         holder.setTextView(bucket.get(position));
         holder.getImageView().setOnClickListener(new View.OnClickListener()
@@ -58,7 +59,10 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
             @Override
             public void onClick(View v)
             {
-                galleryIndex.openImages(bucket.get(holder.getAdapterPosition()));
+                if (holder.getAdapterPosition() == 0)
+                    galleryIndex.openAllImages();
+                else
+                    galleryIndex.openImages(bucket.get(holder.getAdapterPosition()));
             }
         });
 
@@ -67,19 +71,20 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
     @Override
     public int getItemCount()
     {
-        return bucket!=null?bucket.size():0;
+        return bucket != null ? bucket.size() : 0;
     }
 
     class Holder extends RecyclerView.ViewHolder
     {
         private ImageView imageView;
         private TextView textView;
+
         public Holder(View itemView)
         {
             super(itemView);
-            textView=(TextView)itemView.findViewById(R.id.text_view);
-            imageView=(ImageView)itemView.findViewById(R.id.image_view);
-            itemView.getLayoutParams().height=width_screen/cnum;
+            textView = (TextView) itemView.findViewById(R.id.text_view);
+            imageView = (ImageView) itemView.findViewById(R.id.image_view);
+            itemView.getLayoutParams().height = width_screen / cnum;
 
 //            layoutParams.width=width_screen/cnum;
 //            layoutParams.height=width_screen/cnum;
