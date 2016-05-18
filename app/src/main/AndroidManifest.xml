@@ -10,6 +10,16 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
 
+        <provider android:name="android.support.v4.content.FileProvider"
+                  android:authorities="com.totalboron.jay.labeled.MainActivity"
+                  android:exported="false"
+                  android:grantUriPermissions="true">
+
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+                       android:resource="@xml/provider_share"/>
+        </provider>
+
+
         <activity android:name=".MainActivity"
                   android:launchMode="singleTop">
             <intent-filter>

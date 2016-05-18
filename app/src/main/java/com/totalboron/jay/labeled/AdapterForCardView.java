@@ -1,6 +1,7 @@
 package com.totalboron.jay.labeled;
 
 import android.content.Context;
+import android.support.v4.os.AsyncTaskCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -35,15 +36,15 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         this.image_files = null;
         this.strings_of_files = null;
         this.mainActivity = mainActivity;
-        selection_list=new ArrayList<>();
-        holders=new ArrayList<>();
+        selection_list = new ArrayList<>();
+        holders = new ArrayList<>();
     }
 
     @Override
     public CardAdapterHolder onCreateViewHolder(ViewGroup parent, int viewType)
     {
         View view = LayoutInflater.from(context).inflate(R.layout.card_view_recycler, parent, false);
-        CardAdapterHolder cardAdapterHolder=new CardAdapterHolder(view);
+        CardAdapterHolder cardAdapterHolder = new CardAdapterHolder(view);
         holders.add(cardAdapterHolder);
         return cardAdapterHolder;
     }
@@ -102,14 +103,14 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         {
             selection_list.remove(Integer.valueOf(cardAdapterHolder.getAdapterPosition()));
             cardAdapterHolder.deHighlight();
-            numberReference.setText(selection_list.size()+"");
+            numberReference.setText(selection_list.size() + "");
             checkIfLast();
         } else
         {
-            if (selection_list.size()==0)
+            if (selection_list.size() == 0)
                 showSelectionBar();
             selection_list.add(cardAdapterHolder.getAdapterPosition());
-            numberReference.setText(selection_list.size()+"");
+            numberReference.setText(selection_list.size() + "");
             cardAdapterHolder.highlight();
         }
     }
@@ -268,18 +269,20 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         this.numberReference = numberReference;
     }
 
-    public void getListItems(MainActivity mainActivity)
+    public void getListItems(MainActivity mainActivity, int requestCode)
     {
-        List<File> images_delete=new ArrayList<>();
-        List<File> labels_delete=new ArrayList<>();
-        int selectin=-1;
+        List<File> images_delete = new ArrayList<>();
+        List<File> labels_delete = new ArrayList<>();
+        int selectin = -1;
         for (int i = 0; i < selection_list.size(); i++)
         {
-            selectin=selection_list.get(i);
+            selectin = selection_list.get(i);
             images_delete.add(image_files.get(selectin));
             labels_delete.add(strings_of_files.get(selectin));
         }
-        mainActivity.receiverOfSelection(images_delete,labels_delete);
+        if (requestCode == 0)
+            mainActivity.receiverOfSelection(images_delete, labels_delete);
+        else mainActivity.sharing(images_delete);
     }
 
     class CardAdapterHolder extends RecyclerView.ViewHolder
@@ -344,7 +347,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
     public void removeAllSelection()
     {
         selection_list.clear();
-        longClicked=false;
+        longClicked = false;
         for (int i = 0; i < holders.size(); i++)
         {
             holders.get(i).deHighlight();
@@ -354,5 +357,10 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
     public boolean isLongClicked()
     {
         return longClicked;
+    }
+
+    public List<Integer> getSelection_list()
+    {
+        return selection_list;
     }
 }

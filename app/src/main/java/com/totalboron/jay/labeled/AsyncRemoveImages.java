@@ -23,8 +23,8 @@ public class AsyncRemoveImages extends AsyncTask<Void,Void,Void>
     @Override
     protected Void doInBackground(Void... params)
     {
-        File file=context.getDir(context.getResources().getString(R.string.directory_images),Context.MODE_PRIVATE);
-        File file_labels=context.getDir(context.getResources().getString(R.string.directory_labels),Context.MODE_PRIVATE);
+        File file=new File(context.getFilesDir(),context.getResources().getString(R.string.directory_images));
+        File file_labels=new File(context.getFilesDir(),context.getResources().getString(R.string.directory_labels));
         File[] imageFiles=file.listFiles();
         File[] labelFiles=file_labels.listFiles();
         for (int i=0;i<imageFiles.length;i++)

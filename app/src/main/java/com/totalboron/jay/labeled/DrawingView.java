@@ -336,14 +336,13 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
     @Override
     public boolean onDoubleTap(MotionEvent e)
     {
-        return true;
+        return false;
     }
 
     @Override
     public boolean onDoubleTapEvent(MotionEvent e)
     {
-        reset();
-        return true;
+        return false;
     }
 
     @Override
@@ -504,13 +503,6 @@ public class DrawingView extends ImageView implements GestureDetector.OnGestureL
         sendMessage(string, initX, initY, finX, finY,true);
     }
 
-    public void colorList()
-    {
-        for (int i=0;i<=list_item;i++)
-        {
-            Log.d("colors",i+"="+colors.get(i));
-        }
-    }
 
     public void setSaving(boolean saving)
     {

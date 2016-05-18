@@ -52,8 +52,8 @@ public class DrawingScene extends FragmentActivity
     private int imageWidth = 0;
     private EditText editText;
     private SeekBar seekBar;
-    private LinearLayoutCustom toolbars;
-    private LinearLayoutCustom edit_text_tray;
+    private LinearLayout toolbars;
+    private LinearLayout edit_text_tray;
     private LinearLayout linearLayout;
     private boolean colorsBarOpen = true;
     private final int REQUEST_WRITE_STORAGE = 52;
@@ -64,7 +64,7 @@ public class DrawingScene extends FragmentActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawing_scene);
-        edit_text_tray = (LinearLayoutCustom) findViewById(R.id.edit_text_tray);
+        edit_text_tray = (LinearLayout) findViewById(R.id.edit_text_tray);
         editText = (EditText) edit_text_tray.findViewById(R.id.edit_text);
         Intent intent = getIntent();
         if (intent.getAction().equals("Main_Activity"))
@@ -100,7 +100,7 @@ public class DrawingScene extends FragmentActivity
         });
         seekBar.setProgress(35);
         drawingView.setSize(35);
-        toolbars = (LinearLayoutCustom) findViewById(R.id.toolsToShow);
+        toolbars = (LinearLayout) findViewById(R.id.toolsToShow);
         linearLayout = (LinearLayout) findViewById(R.id.paintToolbar);
         colorsBarOpen = linearLayout.getVisibility() == View.VISIBLE;
 
@@ -184,35 +184,89 @@ public class DrawingScene extends FragmentActivity
 
     public void loadFragment(View view)
     {
-        edit_text_tray.setVisibility(View.VISIBLE);
-        isFragmentPresent = true;
-        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_FORCED);
+        ObjectAnimator animator=ObjectAnimator.ofFloat(edit_text_tray,View.ALPHA,0f,1f);
+        animator.addListener(new Animator.AnimatorListener()
+        {
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+                edit_text_tray.setVisibility(View.VISIBLE);
+                isFragmentPresent = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+                InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_FORCED);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation)
+            {
+
+            }
+        });
+        animator.setDuration(100);
+        animator.start();
     }
 
-
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)
+    public void onBackPressed()
     {
-        Log.d(logging, "in onKeyDown");
         if (isFragmentPresent == true)
         {
             removeKeyboard();
             removeFragment();
-            return true;
+        } else
+        {
+            drawingView.setSaving(true);
+            super.onBackPressed();
         }
-        drawingView.setSaving(true);
-        return super.onKeyDown(keyCode, event);
-    }
 
+    }
 
     private void removeFragment()
     {
-        removeKeyboard();
-        edit_text_tray.setVisibility(View.INVISIBLE);
-        editText.setText("");
-        isFragmentPresent = false;
-        setState();
+
+        ObjectAnimator animator=ObjectAnimator.ofFloat(edit_text_tray,View.ALPHA,1f,0f);
+        animator.addListener(new Animator.AnimatorListener()
+        {
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+                removeKeyboard();
+                isFragmentPresent = false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+                edit_text_tray.setVisibility(View.INVISIBLE);
+                editText.setText("");
+                setState();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation)
+            {
+
+            }
+        });
+        animator.setDuration(100);
+        animator.start();
     }
 
     private void removeKeyboard()
@@ -611,10 +665,5 @@ public class DrawingScene extends FragmentActivity
                 linearLayout.setVisibility(View.VISIBLE);
 
         }
-    }
-
-    public void colorList(View view)
-    {
-        drawingView.colorList();
     }
 }

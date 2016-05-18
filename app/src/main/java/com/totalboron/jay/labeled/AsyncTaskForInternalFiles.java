@@ -26,15 +26,23 @@ public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
     public AsyncTaskForInternalFiles(Context context, MainActivity mainActivity)
     {
         this.context = context;
-        weakReference=new WeakReference<MainActivity>(mainActivity);
+        weakReference = new WeakReference<MainActivity>(mainActivity);
+        Log.d(logging,"Harami");
     }
 
     @Override
     protected File[] doInBackground(Void... params)
     {
-        File internal_save = context.getDir(context.getResources().getString(R.string.directory_images), Context.MODE_PRIVATE);
+        File internal_save = new File(context.getFilesDir(), context.getResources().getString(R.string.directory_images));
+        Log.d(logging,internal_save.getAbsolutePath());
         File[] files = internal_save.listFiles();
-        labels = context.getDir(context.getResources().getString(R.string.directory_labels), Context.MODE_PRIVATE).listFiles();
+        if (files == null)
+        {
+            Log.d(logging,"Null returniung");
+            return null;
+        }
+        labels = (new File(context.getFilesDir(), context.getResources().getString(R.string.directory_labels))).listFiles();
+        labels = (new File(context.getFilesDir(), context.getResources().getString(R.string.directory_labels))).listFiles();
         sortItOut(files, labels);
         return files;
     }
@@ -47,8 +55,6 @@ public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
         {
             pairForSorting[i] = new PairForSorting(files[i]);
             labelsForSorting[i] = new PairForSorting(labels[i]);
-            Log.d(logging, files[i].getAbsolutePath() + "=fileNames");
-            Log.d(logging, labels[i].getAbsolutePath() + "=labelNames");
         }
         Arrays.sort(pairForSorting);
         Arrays.sort(labelsForSorting);
@@ -62,9 +68,9 @@ public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
     @Override
     protected void onPostExecute(File[] files)
     {
-        if ((!isCancelled())&&files != null)
+        if ((!isCancelled()) && files != null)
         {
-            weakReference.get().fillUpRecyclerView(files,labels);
+            weakReference.get().fillUpRecyclerView(files, labels);
         }
     }
 }

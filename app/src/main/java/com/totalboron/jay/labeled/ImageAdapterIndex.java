@@ -18,11 +18,11 @@ import java.util.List;
 public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Holder>
 {
     private List<String> bucket;
-    private List<String> data;
+    private List<File> data;
     private int width_screen;
     private int cnum;
     private GalleryIndex galleryIndex;
-    public ImageAdapterIndex(List<String> bucket, List<String> data, int cnum, GalleryIndex galleryIndex)
+    public ImageAdapterIndex(List<String> bucket, List<File> data, int cnum, GalleryIndex galleryIndex)
     {
         this.bucket = bucket;
         this.data = data;
@@ -30,17 +30,12 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
         this.galleryIndex=galleryIndex;
     }
 
-    public void setBucket(List<String> bucket,List<String> data,int width)
+    public void setBucket(List<String> bucket,List<File> data,int width)
     {
         this.bucket = bucket;
         this.data=data;
         width_screen=width;
         notifyDataSetChanged();
-    }
-
-    public void setData(List<String> data)
-    {
-        this.data = data;
     }
 
     @Override
@@ -54,7 +49,9 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
     public void onBindViewHolder(final Holder holder,int position)
     {
         ImageView imageView=holder.getImageView();
-        Glide.with(imageView.getContext()).load(new File(data.get(position))).into(imageView);
+
+        Glide.with(imageView.getContext()).load(data.get(position)).override(width_screen/cnum,width_screen/cnum).placeholder(R.drawable.placeholder).into(imageView);
+
         holder.setTextView(bucket.get(position));
         holder.getImageView().setOnClickListener(new View.OnClickListener()
         {
@@ -82,10 +79,11 @@ public class ImageAdapterIndex extends RecyclerView.Adapter<ImageAdapterIndex.Ho
             super(itemView);
             textView=(TextView)itemView.findViewById(R.id.text_view);
             imageView=(ImageView)itemView.findViewById(R.id.image_view);
-            ViewGroup.LayoutParams layoutParams=itemView.getLayoutParams();
-            layoutParams.width=width_screen/cnum;
-            layoutParams.height=width_screen/cnum;
-            itemView.setLayoutParams(layoutParams);
+            itemView.getLayoutParams().height=width_screen/cnum;
+
+//            layoutParams.width=width_screen/cnum;
+//            layoutParams.height=width_screen/cnum;
+//            itemView.setLayoutParams(layoutParams);
         }
 
         public ImageView getImageView()

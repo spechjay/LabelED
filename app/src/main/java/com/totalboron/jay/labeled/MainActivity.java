@@ -2,15 +2,20 @@ package com.totalboron.jay.labeled;
 
 import android.animation.Animator;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ShareCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,12 +27,13 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +41,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -56,24 +63,32 @@ public class MainActivity extends AppCompatActivity
     private ImageView overview_image;
     private TableLayout overview_table;
     private RelativeLayout relativeLayout;
-    private MyRelativeLayout myRelativeLayout;
+    private RelativeLayout myRelativeLayout;
     private RelativeLayout selectionToolbar;
-
+    private FrameLayout blurring;
+    private MyRelativeLayout rootView;
+    private ScrollView scrollView;
     private int[] rect;
     private int measuredHeight;
     private int measuredWidth;
+    private boolean animationGoing = false;
+    private int REQUEST_CODE_SHARE = 94;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        Log.d(logging, "What the fuck");
         setContentView(R.layout.app_bar_main);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         relativeLayout = (RelativeLayout) findViewById(R.id.overview_whole);
-        myRelativeLayout = (MyRelativeLayout) findViewById(R.id.main_view_relative_layout);
-        myRelativeLayout.setMainActivity(this);
-        myRelativeLayout.setRelativeLayout(relativeLayout);
+        myRelativeLayout = (RelativeLayout) findViewById(R.id.main_view_relative_layout);
+        scrollView = (ScrollView) findViewById(R.id.scroll_view_table);
         selectionToolbar = (RelativeLayout) findViewById(R.id.selection_toolbar);
+        rootView = (MyRelativeLayout) findViewById(R.id.root_view);
+        rootView.setMainActivity(this);
+        rootView.setRelativeLayout(relativeLayout);
+        blurring = (FrameLayout) findViewById(R.id.blurring);
         if (toolbar != null)
         {
             search_edit_text = (AutoCompleteTextView) toolbar.findViewById(R.id.edit_text_search);
@@ -146,8 +161,8 @@ public class MainActivity extends AppCompatActivity
         Cursor cursor = databaseAdapter.getSearch(text);
         if (text.length() <= 0)
         {
-            if (labels_total!=null)
-            adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(labels_total)), new LinkedList<>(Arrays.asList(images_total)));
+            if (labels_total != null)
+                adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(labels_total)), new LinkedList<>(Arrays.asList(images_total)));
             else adapterForCardView.setNull();
         } else if (cursor != null && cursor.getCount() > 0 && labels_total != null)
         {
@@ -226,6 +241,10 @@ public class MainActivity extends AppCompatActivity
                 search_edit_text.setText(result.get(0));
                 messageReceiver();
             }
+        } else if (requestCode == REQUEST_CODE_SHARE)
+        {
+            adapterForCardView.removeAllSelection();
+            hideSelectionBar();
         }
     }
 
@@ -237,23 +256,14 @@ public class MainActivity extends AppCompatActivity
         adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(label)), new LinkedList<>(Arrays.asList(images)));
     }
 
-
-    public void removeAll(View view)
-    {
-        AsyncRemoveImages asyncRemoveImages = new AsyncRemoveImages(getApplicationContext(), adapterForCardView);
-        asyncRemoveImages.execute();
-    }
-
     public void clickedSearch(View view)
     {
-        if (relativeLayout.getVisibility() == View.VISIBLE)
-            deflate();
         RelativeLayout searchTool = (RelativeLayout) toolbar.findViewById(R.id.searchTool);
         searchTool.setVisibility(View.VISIBLE);
-        int cx = searchTool.getMeasuredWidth();
-        int cy = searchTool.getMeasuredHeight();
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP)
         {
+            int cx = searchTool.getMeasuredWidth();
+            int cy = searchTool.getMeasuredHeight();
             Animator animator = ViewAnimationUtils.createCircularReveal(searchTool, cx, cy / 2, 0, cx);
             animator.addListener(new Animator.AnimatorListener()
             {
@@ -285,29 +295,66 @@ public class MainActivity extends AppCompatActivity
                 }
             });
             animator.start();
-        } else searchTool.setVisibility(View.INVISIBLE);
+        }
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)
+    public void onBackPressed()
     {
         if (adapterForCardView.isLongClicked())
         {
             adapterForCardView.removeAllSelection();
             hideSelectionBar();
-            return true;
         } else if (relativeLayout.getVisibility() == View.VISIBLE)
         {
             deflate();
-            return true;
         } else if (toolbar.findViewById(R.id.searchTool).getVisibility() == View.VISIBLE)
         {
-            search_edit_text.setText("");
-            toolbar.findViewById(R.id.initial).setVisibility(View.VISIBLE);
-            toolbar.findViewById(R.id.searchTool).setVisibility(View.INVISIBLE);
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
+            closeSearchingToolbar();
+        } else
+            super.onBackPressed();
+    }
+
+    private void closeSearchingToolbar()
+    {
+        final InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
+        search_edit_text.setText("");
+        toolbar.findViewById(R.id.initial).setVisibility(View.VISIBLE);
+        final View searchTool = toolbar.findViewById(R.id.searchTool);
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP)
+        {
+            int cx = searchTool.getMeasuredWidth();
+            int cy = searchTool.getMeasuredHeight();
+            Animator animator = ViewAnimationUtils.createCircularReveal(searchTool, cx, cy / 2, cx, 0);
+            animator.addListener(new Animator.AnimatorListener()
+            {
+                @Override
+                public void onAnimationStart(Animator animation)
+                {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation)
+                {
+                    searchTool.setVisibility(View.INVISIBLE);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation)
+                {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation)
+                {
+
+                }
+            });
+            animator.start();
+        } else searchTool.setVisibility(View.INVISIBLE);
     }
 
     public void speechToText(View view)
@@ -325,68 +372,65 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void Register(View view)
-    {
-        adapterForCardView.addToDatabase();
-    }
-
     public void setUpOverview(File images, File label_files, int[] rect, int measuredHeight, int measuredWidth)
     {
 
-//        this.measuredHeight = measuredHeight;
-//        this.measuredWidth = measuredWidth;
-//        BitmapFactory.Options options = new BitmapFactory.Options();
-//        options.inJustDecodeBounds = true;
-//        BitmapFactory.decodeFile(images.getAbsolutePath(), options);
-//        int width = options.outWidth;
-//        int height = options.outHeight;
-//        overview_image.setImageBitmap(null);
-//        overview_table.removeAllViews();
-//        float aspectRatio = ((float) height) / width;
-//        Log.d(logging, aspectRatio + "");
-//        int orientation = getResources().getConfiguration().orientation;
-//        if (aspectRatio >= 1)
-//        {
-//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-//            {
-//                setOverViewLayoutForLandscape(0.85f, aspectRatio);
-//            } else
-//                setOverViewLayoutForPortrait(0.65f, aspectRatio);
-//        } else
-//        {
-//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-//            {
-//                setOverViewLayoutForLandscape(0.75f, aspectRatio);
-//            } else
-//                setOverViewLayoutForPortrait(0.85f, aspectRatio);
-//        }
-//        Glide.with(getApplicationContext()).load(images).into(overview_image);
-//        this.rect = rect;
-        MyDialog myDialog=new MyDialog(this,images,label_files);
-        Window window=myDialog.getWindow();
-        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
-        myDialog.show();
+        this.measuredHeight = measuredHeight;
+        this.measuredWidth = measuredWidth;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(images.getAbsolutePath(), options);
+        int width = options.outWidth;
+        int height = options.outHeight;
+        overview_image.setImageBitmap(null);
+        overview_table.removeAllViews();
+        float aspectRatio = ((float) height) / width;
+        int orientation = getResources().getConfiguration().orientation;
+        if (aspectRatio >= 1)
+        {
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+            {
+                setOverViewLayoutForLandscape(0.85f, aspectRatio, images);
+            } else
+                setOverViewLayoutForPortrait(0.65f, aspectRatio, images);
+        } else
+        {
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+            {
+                setOverViewLayoutForLandscape(0.75f, aspectRatio, images);
+            } else
+                setOverViewLayoutForPortrait(0.85f, aspectRatio, images);
+        }
+        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table, this);
+        detailedLabelShow.execute(label_files);
+        this.rect = rect;
     }
 
-    private void setOverViewLayoutForPortrait(float percentage, float aspectRatio)
+    private void setOverViewLayoutForPortrait(float percentage, float aspectRatio, File images)
     {
         int total_width = getWindow().getDecorView().getWidth();
         int total_height = myRelativeLayout.getHeight();
         int decided_width = (int) (total_width * percentage);
         ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
         layoutParams.width = decided_width;
-        layoutParams.height = (int) (decided_width * aspectRatio);
+        int decided_height = (int) (decided_width * aspectRatio);
+        layoutParams.height = decided_height;
         overview_image.requestLayout();
+
         ViewGroup.LayoutParams tableParams = overview_table.getLayoutParams();
         tableParams.width = decided_width;
         float leftHeight = total_height - decided_width * aspectRatio;
         float using_height = overview_table.getHeight();
+        Log.d(logging, "leftHeight=" + leftHeight);
+        Log.d(logging, "using Height=" + using_height);
         if (using_height > leftHeight)
-            tableParams.height = (int) (0.9 * leftHeight);
+            scrollView.getLayoutParams().height = (int) leftHeight;
+        scrollView.requestLayout();
         overview_table.requestLayout();
+        Glide.with(getApplicationContext()).load(images).override(decided_width, decided_height).into(overview_image);
     }
 
-    private void setOverViewLayoutForLandscape(float percentage, float aspectRatio)
+    private void setOverViewLayoutForLandscape(float percentage, float aspectRatio, File images)
     {
         int total_height = myRelativeLayout.getHeight();
         float decided_height = total_height * percentage;
@@ -400,40 +444,169 @@ public class MainActivity extends AppCompatActivity
         float usingHeight = overview_table.getHeight();
         float leftHeight = total_height * (1 - percentage);
         if (usingHeight > leftHeight)
-            tableParams.height = (int) (total_height * (1 - percentage - 0.04));
+            tableParams.height = (int) (usingHeight = (float) (total_height * (1 - percentage - 0.04)));
         overview_table.requestLayout();
+        Glide.with(getApplicationContext()).load(images).override(decided_width, (int) decided_height).into(overview_image);
     }
 
     public void inflate()
     {
         //ToDo:Add an animation here
-        relativeLayout.setVisibility(View.VISIBLE);
+        if (!animationGoing)
+        {
+            relativeLayout.setVisibility(View.VISIBLE);
+            AnimatorSet animatorSet = new AnimatorSet();
+            ObjectAnimator animator = ObjectAnimator.ofFloat(blurring, View.ALPHA, 0f, 0.75f);
+            ObjectAnimator overViewanim = ObjectAnimator.ofFloat(relativeLayout, View.ALPHA, 0f, 1f);
+//        ObjectAnimator translateX=ObjectAnimator.ofFloat(relativeLayout,View.X,rect[0],x);
+//        ObjectAnimator translateY=ObjectAnimator.ofFloat(relativeLayout,View.Y,rect[1],y);
+//        animatorSet.play(animator).with(translateX);
+//        animatorSet.play(animator).with(translateY);
+//        animatorSet.start();
+            animatorSet.play(animator).with(overViewanim);
+            animatorSet.addListener(new Animator.AnimatorListener()
+            {
+                @Override
+                public void onAnimationStart(Animator animation)
+                {
+                    animationGoing = true;
+                    getWindow().getDecorView().getRootView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation)
+                {
+                    animationGoing = false;
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation)
+                {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation)
+                {
+
+                }
+            });
+            animatorSet.start();
+        }
     }
 
     public void deflate()
     {
-        //ToDo:Add an animation here also
-        relativeLayout.setVisibility(View.INVISIBLE);
+        if (!animationGoing)
+        {
+            AnimatorSet animatorSet = new AnimatorSet();
+            ObjectAnimator animator = ObjectAnimator.ofFloat(blurring, View.ALPHA, 0.75f, 0f);
+            ObjectAnimator overViewanim = ObjectAnimator.ofFloat(relativeLayout, View.ALPHA, 1f, 0f);
+            animatorSet.play(animator).with(overViewanim);
+            animatorSet.addListener(new Animator.AnimatorListener()
+            {
+                @Override
+                public void onAnimationStart(Animator animation)
+                {
+                    animationGoing = true;
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation)
+                {
+                    relativeLayout.setVisibility(View.INVISIBLE);
+                    getWindow().getDecorView().getRootView().setSystemUiVisibility(0);
+                    animationGoing = false;
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation)
+                {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation)
+                {
+
+                }
+            });
+            animatorSet.start();
+        }
     }
 
     public void clickedOverviewImage(View view)
     {
-        Log.d(logging, relativeLayout.getY() + "");
+
     }
 
     public void showSelectionBar()
     {
-        selectionToolbar.setVisibility(View.VISIBLE);
+        ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(selectionToolbar, View.ALPHA, 0f, 1f);
+        objectAnimator.addListener(new Animator.AnimatorListener()
+        {
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+                selectionToolbar.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation)
+            {
+
+            }
+        });
+        objectAnimator.start();
     }
 
     public void hideSelectionBar()
     {
-        selectionToolbar.setVisibility(View.INVISIBLE);
+        ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(selectionToolbar, View.ALPHA, 1f, 0f);
+        objectAnimator.addListener(new Animator.AnimatorListener()
+        {
+            @Override
+            public void onAnimationStart(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation)
+            {
+                selectionToolbar.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation)
+            {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation)
+            {
+
+            }
+        });
+        objectAnimator.start();
     }
 
     public void removeItems(View view)
     {
-        adapterForCardView.getListItems(this);
+        adapterForCardView.getListItems(this, 0);
     }
 
     public void receiverOfSelection(List<File> images_delete, List<File> labels_delete)
@@ -448,5 +621,74 @@ public class MainActivity extends AppCompatActivity
     {
         AsyncTaskForInternalFiles asyncTaskForInternalFiles = new AsyncTaskForInternalFiles(getApplicationContext(), this);
         asyncTaskForInternalFiles.execute();
+    }
+
+    public void startAll()
+    {
+        inflate();
+    }
+
+    public void shareContent(View view)
+    {
+        adapterForCardView.getListItems(this, 1);
+    }
+
+
+    public void sharing(List<File> images_delete)
+    {
+        //ToDo: Create Uri for all the files
+        if (images_delete.size() == 1)
+        {
+            Uri fileUri=FileProvider.getUriForFile(this,"com.totalboron.jay.labeled.MainActivity",images_delete.get(0));
+            Intent shareIntent=ShareCompat.IntentBuilder.from(this).setStream(fileUri).setType("image/*").getIntent();
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            if (shareIntent.resolveActivity(getPackageManager())!=null)
+                startActivityForResult(shareIntent,REQUEST_CODE_SHARE);
+        } else
+        {
+            ShareCompat.IntentBuilder intentBuilder=ShareCompat.IntentBuilder.from(this).setType("image/*");
+            for (int i = 0; i < images_delete.size(); i++)
+            {
+                intentBuilder.addStream(FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", images_delete.get(i)));
+            }
+            Log.d(logging,"In Multiple");
+            Intent shareIntent=intentBuilder.getIntent();
+
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            if (shareIntent.resolveActivity(getPackageManager())!=null)
+                startActivityForResult(shareIntent,REQUEST_CODE_SHARE);
+        }
+    }
+
+    public void shareUris(ArrayList<Uri> uris)
+    {
+        Intent intent;
+        if (uris.size() > 1)
+        {
+            intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+            intent.setType("image/*");
+            intent.putExtra(Intent.EXTRA_STREAM, uris);
+//            intent=Intent.createChooser(intent,"Choose");
+            startActivityForResult(intent, REQUEST_CODE_SHARE);
+
+        } else if (uris.size() == 1)
+        {
+            intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("image/*");
+            intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+            intent = Intent.createChooser(intent, "Choose");
+            startActivityForResult(intent, REQUEST_CODE_SHARE);
+        }
+    }
+
+    public void backButtonToolbar(View view)
+    {
+        adapterForCardView.removeAllSelection();
+        hideSelectionBar();
+    }
+
+    public void closeSearchBar(View view)
+    {
+        closeSearchingToolbar();
     }
 }

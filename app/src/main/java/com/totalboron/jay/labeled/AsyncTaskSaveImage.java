@@ -31,6 +31,16 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap, Void, Void>
         this.fileName = fileName;
         this.context = context;
         this.labels = labels;
+        removeAllBlanks();
+    }
+
+    private void removeAllBlanks()
+    {
+        for (int i=labels.size()-1;i>=0;i--)
+        {
+            if (labels.get(i).equals(""))
+                labels.remove(i);
+        }
     }
 
     @Override
@@ -43,10 +53,15 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap, Void, Void>
         }
         long time = System.currentTimeMillis();
         String publicPath = file.getAbsolutePath() + "/" + "LabelED" + time + fileName;
-        File internal_save = context.getDir(context.getResources().getString(R.string.directory_images), Context.MODE_PRIVATE);
+        File internal_save=new File(context.getFilesDir(),context.getResources().getString(R.string.directory_images));
+        if (!internal_save.exists())
+            internal_save.mkdirs();
+        Log.d(logging,internal_save.getAbsolutePath());
         File image = new File(internal_save, "LabelED" + time + fileName);
         getName(time);
-        File internal_save_labels = context.getDir(context.getResources().getString(R.string.directory_labels), Context.MODE_PRIVATE);
+        File internal_save_labels=new File(context.getFilesDir(),context.getResources().getString(R.string.directory_labels));
+        if (!internal_save_labels.exists())
+            internal_save_labels.mkdirs();
         internal_save_labels = new File(internal_save_labels, fileName);
         try
         {

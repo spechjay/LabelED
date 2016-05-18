@@ -34,18 +34,18 @@ public class ImageList extends RecyclerView.Adapter<ImageList.Holder>
     }
 
     @Override
-    public void onBindViewHolder(Holder holder, final int position)
+    public void onBindViewHolder(final Holder holder,int position)
     {
         ImageView imageView = holder.getImageView();
         cursor.moveToPosition(position);
         final int data = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-        Glide.with(imageView.getContext()).load(new File(cursor.getString(data))).into(imageView);
+        Glide.with(imageView.getContext()).load(new File(cursor.getString(data))).override(width,width).placeholder(R.drawable.placeholder).into(imageView);
         imageView.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                cursor.moveToPosition(position);
+                cursor.moveToPosition(holder.getAdapterPosition());
                 imageListActivity.sendBackResult(cursor.getString(data));
             }
         });

@@ -15,6 +15,7 @@ public class MyRelativeLayout extends RelativeLayout
     private RelativeLayout relativeLayout = null;
     private Rect rect = new Rect();
     private MainActivity mainActivity = null;
+    private String logging=getClass().getSimpleName();
 
     public MyRelativeLayout(Context context)
     {
@@ -39,12 +40,15 @@ public class MyRelativeLayout extends RelativeLayout
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev)
     {
+        Log.d(logging,"Inside Intercept");
         if (relativeLayout != null && relativeLayout.getVisibility() == VISIBLE)
         {
             relativeLayout.getHitRect(rect);
             if (!rect.contains((int) ev.getX(), (int) ev.getY()))
+            {
                 return true;
-            return false;
+            }
+            else return super.onInterceptTouchEvent(ev);
         } else
             return super.onInterceptTouchEvent(ev);
     }
@@ -52,17 +56,8 @@ public class MyRelativeLayout extends RelativeLayout
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
-        if (relativeLayout != null && relativeLayout.getVisibility() == VISIBLE)
-        {
-            relativeLayout.getHitRect(rect);
-            if (!rect.contains((int) event.getX(), (int) event.getY()))
-            {
-
-                mainActivity.deflate();
-                return true;
-            }
-        }
-        return super.onTouchEvent(event);
+        mainActivity.deflate();
+        return  true;
     }
 
     public void setMainActivity(MainActivity mainActivity)

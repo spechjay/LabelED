@@ -13,6 +13,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
@@ -27,7 +28,6 @@ public class GalleryIndex extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
-        Log.d(logging, "in onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.behaviour);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_index);
@@ -82,7 +82,7 @@ public class GalleryIndex extends AppCompatActivity
         asyncTaskLoadingForIndex.execute();
     }
 
-    public void indexReady(List<String> bucket_list_names, List<String> data_each_bucket)
+    public void indexReady(List<String> bucket_list_names, List<File> data_each_bucket)
     {
         imageAdapterIndex.setBucket(bucket_list_names,data_each_bucket,getWindow().getDecorView().getWidth());
     }
