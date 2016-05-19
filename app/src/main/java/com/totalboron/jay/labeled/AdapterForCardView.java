@@ -29,8 +29,10 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
     private List<Integer> selection_list;
     private List<CardAdapterHolder> holders;
     private TextView numberReference;
+    private RecyclerView recyclerView;
+    private boolean changed=false;
 
-    public AdapterForCardView(Context context, MainActivity mainActivity)
+    public AdapterForCardView(Context context, MainActivity mainActivity,RecyclerView recyclerView)
     {
         this.context = context;
         this.image_files = null;
@@ -38,6 +40,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         this.mainActivity = mainActivity;
         selection_list = new ArrayList<>();
         holders = new ArrayList<>();
+        this.recyclerView=recyclerView;
     }
 
     @Override
@@ -157,6 +160,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         {
             animateTo(image_files, strings_of_files);
         }
+        if (changed) recyclerView.scrollToPosition(0);
     }
 
     private void removeItem(int pos)
@@ -164,6 +168,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         strings_of_files.remove(pos);
         image_files.remove(pos);
         notifyItemRemoved(pos);
+        changed=true;
     }
 
     private void addItem(File image, File label)
@@ -171,6 +176,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         strings_of_files.add(label);
         image_files.add(image);
         notifyItemInserted(strings_of_files.size() - 1);
+        changed=true;
     }
 
     private void moveItem(int fromPosition, int toPosition)
@@ -180,6 +186,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         file = image_files.remove(fromPosition);
         image_files.add(toPosition, file);
         notifyItemMoved(fromPosition, toPosition);
+        changed=true;
     }
 
     private void animateTo(List<File> newImageFile, List<File> newLabel)

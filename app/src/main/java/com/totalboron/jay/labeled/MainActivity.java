@@ -83,9 +83,12 @@ public class MainActivity extends AppCompatActivity
     private int GET_IMAGE = 88;
     private String sent_path;
 
+    //ToDo:One bug: When searched and then deleted the list loads all the selections and not just the one needed.
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+
         super.onCreate(savedInstanceState);
         Log.d(logging, "What the fuck");
         setContentView(R.layout.app_bar_main);
@@ -135,7 +138,7 @@ public class MainActivity extends AppCompatActivity
         int cnum = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 2 : 3;
         gridLayoutManager = new GridLayoutManager(getApplicationContext(), cnum);
         recyclerView.setLayoutManager(gridLayoutManager);
-        adapterForCardView = new AdapterForCardView(getApplicationContext(), this);
+        adapterForCardView = new AdapterForCardView(getApplicationContext(), this,recyclerView);
         recyclerView.setAdapter(adapterForCardView);
         search_edit_text.addTextChangedListener(new TextWatcher()
         {
@@ -279,6 +282,8 @@ public class MainActivity extends AppCompatActivity
         images_total = images;
         labels_total = label;
         adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(label)), new LinkedList<>(Arrays.asList(images)));
+        if (toolbar.findViewById(R.id.searchTool).getVisibility()==View.VISIBLE)
+            messageReceiver();
     }
 
     public void clickedSearch(View view)
