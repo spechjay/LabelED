@@ -27,12 +27,10 @@ public class DetailedLabelShow extends AsyncTask<File, Void, List<String>>
     private Context context;
     private TableLayout tableLayout;
     private String logging=getClass().getSimpleName();
-    private WeakReference<MainActivity> weakReference;
-    public DetailedLabelShow(Context context, TableLayout tableLayout, MainActivity mainActivity)
+    public DetailedLabelShow(Context context, TableLayout tableLayout)
     {
         this.context=context;
         this.tableLayout=tableLayout;
-        weakReference=new WeakReference<MainActivity>(mainActivity);
     }
 
     @Override
@@ -84,7 +82,7 @@ public class DetailedLabelShow extends AsyncTask<File, Void, List<String>>
                 tableRow.addView(textView);
                 else Log.d(logging,"Null:Panic");
             }
-            weakReference.get().startAll();
         }
+
     }
 }

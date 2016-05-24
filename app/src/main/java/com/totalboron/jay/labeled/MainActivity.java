@@ -54,32 +54,26 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity implements FragmentList.OnFragmentListUpdate
 {
     private final int REQUEST_PICTURE = 1;
     private final int SPEECH_CODE = 55;
-    private RecyclerView recyclerView;
-    private AdapterForCardView adapterForCardView;
     private String logging = getClass().getSimpleName();
     private Toolbar toolbar;
     private AutoCompleteTextView search_edit_text;
     private DatabaseAdapter databaseAdapter;
-    private File[] images_total = null;
-    private File[] labels_total = null;
     private ImageView overview_image;
     private TableLayout overview_table;
     private RelativeLayout relativeLayout;
-    private RelativeLayout myRelativeLayout;
     private RelativeLayout selectionToolbar;
     private FrameLayout blurring;
     private MyRelativeLayout rootView;
     private ScrollView scrollView;
-    private int[] rect;
-    private int measuredHeight;
-    private int measuredWidth;
+    private FragmentList fragmentList;
     private boolean animationGoing = false;
     private int REQUEST_CODE_SHARE = 94;
     private int REQUEST_READ_STORAGE = 53;
+    private FrameLayout container;
     private int GET_IMAGE = 88;
     private String sent_path;
 
@@ -90,16 +84,19 @@ public class MainActivity extends AppCompatActivity
     {
 
         super.onCreate(savedInstanceState);
-        Log.d(logging, "What the fuck");
         setContentView(R.layout.app_bar_main);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         relativeLayout = (RelativeLayout) findViewById(R.id.overview_whole);
-        myRelativeLayout = (RelativeLayout) findViewById(R.id.main_view_relative_layout);
+        container = (FrameLayout) findViewById(R.id.container_for_fragment);
+        fragmentList = FragmentList.newInstance();
         scrollView = (ScrollView) findViewById(R.id.scroll_view_table);
         selectionToolbar = (RelativeLayout) findViewById(R.id.selection_toolbar);
         rootView = (MyRelativeLayout) findViewById(R.id.root_view);
-        rootView.setMainActivity(this);
-        rootView.setRelativeLayout(relativeLayout);
+        if (rootView != null)
+        {
+            rootView.setMainActivity(this);
+            rootView.setRelativeLayout(relativeLayout);
+        }
         blurring = (FrameLayout) findViewById(R.id.blurring);
         if (toolbar != null)
         {
@@ -112,7 +109,7 @@ public class MainActivity extends AppCompatActivity
                     if (actionId == EditorInfo.IME_ACTION_SEARCH)
                     {
                         databaseAdapter.insertWordHistory(search_edit_text.getText().toString());
-                        messageReceiver();
+                        fragmentList.messageReceiver(search_edit_text.getText().toString());
                         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                         inputMethodManager.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
                         return true;
@@ -122,7 +119,6 @@ public class MainActivity extends AppCompatActivity
             });
         }
         databaseAdapter = new DatabaseAdapter(getApplicationContext());
-        recyclerView = (RecyclerView) findViewById(R.id.main_activity_recycler_view);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         assert fab != null;
         fab.setOnClickListener(new View.OnClickListener()
@@ -134,12 +130,6 @@ public class MainActivity extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_PICTURE);
             }
         });
-        GridLayoutManager gridLayoutManager;
-        int cnum = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 2 : 3;
-        gridLayoutManager = new GridLayoutManager(getApplicationContext(), cnum);
-        recyclerView.setLayoutManager(gridLayoutManager);
-        adapterForCardView = new AdapterForCardView(getApplicationContext(), this,recyclerView);
-        recyclerView.setAdapter(adapterForCardView);
         search_edit_text.addTextChangedListener(new TextWatcher()
         {
             @Override
@@ -152,7 +142,7 @@ public class MainActivity extends AppCompatActivity
             public void onTextChanged(CharSequence s, int start, int before, int count)
             {
 
-                messageReceiver();
+                fragmentList.messageReceiver(search_edit_text.getText().toString());
             }
 
             @Override
@@ -163,7 +153,10 @@ public class MainActivity extends AppCompatActivity
         });
         overview_image = (ImageView) findViewById(R.id.overview_image);
         overview_table = (TableLayout) findViewById(R.id.overview_table);
-        adapterForCardView.setNumberReference((TextView) selectionToolbar.findViewById(R.id.text_selection));
+        fragmentList.setNumberReference((TextView) toolbar.findViewById(R.id.text_selection));
+        fragmentList.setDatabaseAdapter(databaseAdapter);
+        getFragmentManager().beginTransaction().add(R.id.container_for_fragment, fragmentList).commit();
+
     }
 
     @Override
@@ -173,61 +166,6 @@ public class MainActivity extends AppCompatActivity
         super.onRestoreInstanceState(savedInstanceState);
     }
 
-    private void messageReceiver()
-    {
-        String text = search_edit_text.getText().toString();
-        //Todo:Do this in a different thread here
-        Cursor cursor = databaseAdapter.getSearch(text);
-        if (text.length() <= 0)
-        {
-            if (labels_total != null)
-                adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(labels_total)), new LinkedList<>(Arrays.asList(images_total)));
-            else adapterForCardView.setNull();
-        } else if (cursor != null && cursor.getCount() > 0 && labels_total != null)
-        {
-            String label_name;
-            List<File> result_image = new ArrayList<>();
-            List<File> result_label = new ArrayList<>();
-            while (cursor.moveToNext())
-            {
-                label_name = cursor.getString(0);
-                int index = indexOf(labels_total, label_name);
-                if (index >= 0 && !checkForDuplicate(label_name, result_label))
-                {
-                    result_image.add(images_total[index]);
-                    result_label.add(labels_total[index]);
-                }
-            }
-            adapterForCardView.setFiles(result_label, result_image);
-        } else
-        {
-            adapterForCardView.setNull();
-        }
-        recyclerView.scrollToPosition(0);
-    }
-
-    private boolean checkForDuplicate(String label_name, List<File> result_label)
-    {
-        if (result_label != null)
-        {
-            for (int i = 0; i < result_label.size(); i++)
-            {
-                if (result_label.get(i).getName().equals(label_name))
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    private int indexOf(File[] newList, String label)
-    {
-        for (int i = 0; i < newList.length; i++)
-        {
-            if (newList[i].getName().equals(label))
-                return i;
-        }
-        return -99;
-    }
 
     @Override
     protected void onResume()
@@ -235,7 +173,7 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         if (toolbar.findViewById(R.id.searchTool).getVisibility() == View.INVISIBLE)
         {
-            updateFiles();
+            fragmentList.updateFiles();
         }
     }
 
@@ -258,11 +196,11 @@ public class MainActivity extends AppCompatActivity
             {
                 ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                 search_edit_text.setText(result.get(0));
-                messageReceiver();
+                fragmentList.messageReceiver(result.get(0));
             }
         } else if (requestCode == REQUEST_CODE_SHARE)
         {
-            adapterForCardView.removeAllSelection();
+            fragmentList.removeAllSelection();
             hideSelectionBar();
         } else if (requestCode == GET_IMAGE && resultCode == RESULT_OK)
         {
@@ -275,17 +213,6 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
         }
     }
-
-
-    public void fillUpRecyclerView(File[] images, File[] label)
-    {
-        images_total = images;
-        labels_total = label;
-        adapterForCardView.setFiles(new LinkedList<>(Arrays.asList(label)), new LinkedList<>(Arrays.asList(images)));
-        if (toolbar.findViewById(R.id.searchTool).getVisibility()==View.VISIBLE)
-            messageReceiver();
-    }
-
     public void clickedSearch(View view)
     {
         RelativeLayout searchTool = (RelativeLayout) toolbar.findViewById(R.id.searchTool);
@@ -331,9 +258,9 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onBackPressed()
     {
-        if (adapterForCardView.isLongClicked())
+        if (fragmentList.isLongClicked())
         {
-            adapterForCardView.removeAllSelection();
+            fragmentList.removeAllSelection();
             hideSelectionBar();
         } else if (relativeLayout.getVisibility() == View.VISIBLE)
         {
@@ -402,44 +329,43 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void setUpOverview(File images, File label_files, int[] rect, int measuredHeight, int measuredWidth)
+    public void setUpOverview(DisplayObject overview_object)
     {
-
-        this.measuredHeight = measuredHeight;
-        this.measuredWidth = measuredWidth;
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(images.getAbsolutePath(), options);
-        int width = options.outWidth;
-        int height = options.outHeight;
-        overview_image.setImageBitmap(null);
-        overview_table.removeAllViews();
-        float aspectRatio = ((float) height) / width;
-        int orientation = getResources().getConfiguration().orientation;
-        if (aspectRatio >= 1)
-        {
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-            {
-                setOverViewLayoutForLandscape(0.85f, aspectRatio, images);
-            } else
-                setOverViewLayoutForPortrait(0.65f, aspectRatio, images);
-        } else
-        {
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-            {
-                setOverViewLayoutForLandscape(0.75f, aspectRatio, images);
-            } else
-                setOverViewLayoutForPortrait(0.85f, aspectRatio, images);
-        }
-        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table, this);
-        detailedLabelShow.execute(label_files);
-        this.rect = rect;
+//        BitmapFactory.Options options = new BitmapFactory.Options();
+//        options.inJustDecodeBounds = true;
+//        BitmapFactory.decodeFile(overview_object.getImageFile().getAbsolutePath(), options);
+//        int width = options.outWidth;
+//        int height = options.outHeight;
+//        overview_image.setImageBitmap(null);
+//        overview_table.removeAllViews();
+//        float aspectRatio = ((float) height) / width;
+//        int orientation = getResources().getConfiguration().orientation;
+//        if (aspectRatio >= 1)
+//        {
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+//            {
+//                setOverViewLayoutForLandscape(0.85f, aspectRatio, overview_object.getImageFile());
+//            } else
+//                setOverViewLayoutForPortrait(0.65f, aspectRatio, overview_object.getImageFile());
+//        } else
+//        {
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+//            {
+//                setOverViewLayoutForLandscape(0.75f, aspectRatio, overview_object.getImageFile());
+//            } else
+//                setOverViewLayoutForPortrait(0.85f, aspectRatio, overview_object.getImageFile());
+//        }
+//        DetailedLabelShow detailedLabelShow = new DetailedLabelShow(getApplicationContext(), overview_table, this);
+//        detailedLabelShow.execute(overview_object.getLabelFile());
+        Intent intent=new Intent(this,DetailActivity.class);
+        intent.putExtra("DISPLAY_OBJECT",overview_object);
+        startActivity(intent);
     }
 
     private void setOverViewLayoutForPortrait(float percentage, float aspectRatio, File images)
     {
         int total_width = getWindow().getDecorView().getWidth();
-        int total_height = myRelativeLayout.getHeight();
+        int total_height = rootView.getHeight();
         int decided_width = (int) (total_width * percentage);
         ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
         layoutParams.width = decided_width;
@@ -462,7 +388,7 @@ public class MainActivity extends AppCompatActivity
 
     private void setOverViewLayoutForLandscape(float percentage, float aspectRatio, File images)
     {
-        int total_height = myRelativeLayout.getHeight();
+        int total_height = rootView.getHeight();
         float decided_height = total_height * percentage;
         int decided_width = (int) (decided_height / aspectRatio);
         ViewGroup.LayoutParams layoutParams = overview_image.getLayoutParams();
@@ -636,21 +562,15 @@ public class MainActivity extends AppCompatActivity
 
     public void removeItems(View view)
     {
-        adapterForCardView.getListItems(this, 0);
+        fragmentList.getListItems(0);
     }
 
-    public void receiverOfSelection(List<File> images_delete, List<File> labels_delete)
+    public void receiverOfSelection(List<DisplayObject> newList)
     {
-        adapterForCardView.removeAllSelection();
+        fragmentList.removeAllSelection();
         hideSelectionBar();
-        DeleteFilesAsyncTask deleteFilesAsyncTask = new DeleteFilesAsyncTask(images_delete, this, databaseAdapter, getApplicationContext());
-        deleteFilesAsyncTask.execute(labels_delete);
-    }
-
-    public void updateFiles()
-    {
-        AsyncTaskForInternalFiles asyncTaskForInternalFiles = new AsyncTaskForInternalFiles(getApplicationContext(), this);
-        asyncTaskForInternalFiles.execute();
+        DeleteFilesAsyncTask deleteFilesAsyncTask = new DeleteFilesAsyncTask(fragmentList, databaseAdapter, getApplicationContext());
+        deleteFilesAsyncTask.execute(newList);
     }
 
     public void startAll()
@@ -660,16 +580,16 @@ public class MainActivity extends AppCompatActivity
 
     public void shareContent(View view)
     {
-        adapterForCardView.getListItems(this, 1);
+        fragmentList.getListItems(1);
     }
 
 
-    public void sharing(List<File> images_delete)
+    public void sharing(List<DisplayObject> newList)
     {
         //ToDo: Create Uri for all the files
-        if (images_delete.size() == 1)
+        if (newList.size() == 1)
         {
-            Uri fileUri = FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", images_delete.get(0));
+            Uri fileUri = FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", newList.get(0).getImageFile());
             Intent shareIntent = ShareCompat.IntentBuilder.from(this).setStream(fileUri).setType("image/*").getIntent();
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             if (shareIntent.resolveActivity(getPackageManager()) != null)
@@ -677,9 +597,9 @@ public class MainActivity extends AppCompatActivity
         } else
         {
             ShareCompat.IntentBuilder intentBuilder = ShareCompat.IntentBuilder.from(this).setType("image/*");
-            for (int i = 0; i < images_delete.size(); i++)
+            for (int i = 0; i < newList.size(); i++)
             {
-                intentBuilder.addStream(FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", images_delete.get(i)));
+                intentBuilder.addStream(FileProvider.getUriForFile(this, "com.totalboron.jay.labeled.MainActivity", newList.get(i).getImageFile()));
             }
             Log.d(logging, "In Multiple");
             Intent shareIntent = intentBuilder.getIntent();
@@ -690,30 +610,10 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void shareUris(ArrayList<Uri> uris)
-    {
-        Intent intent;
-        if (uris.size() > 1)
-        {
-            intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-            intent.setType("image/*");
-            intent.putExtra(Intent.EXTRA_STREAM, uris);
-//            intent=Intent.createChooser(intent,"Choose");
-            startActivityForResult(intent, REQUEST_CODE_SHARE);
-
-        } else if (uris.size() == 1)
-        {
-            intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("image/*");
-            intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
-            intent = Intent.createChooser(intent, "Choose");
-            startActivityForResult(intent, REQUEST_CODE_SHARE);
-        }
-    }
 
     public void backButtonToolbar(View view)
     {
-        adapterForCardView.removeAllSelection();
+        fragmentList.removeAllSelection();
         hideSelectionBar();
     }
 

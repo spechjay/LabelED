@@ -11,40 +11,43 @@ import android.util.Log;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by Jay on 19/04/16.
  */
-public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
+public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, Void>
 {
     private Context context;
-    private WeakReference<MainActivity> weakReference;
+    private WeakReference<FragmentList> weakReference;
     private File[] labels;
     private String logging = getClass().getSimpleName();
+    private List<DisplayObject> displayObjects;
 
-    public AsyncTaskForInternalFiles(Context context, MainActivity mainActivity)
+    public AsyncTaskForInternalFiles(Context context, FragmentList fragmentList)
     {
         this.context = context;
-        weakReference = new WeakReference<MainActivity>(mainActivity);
-        Log.d(logging,"Harami");
+        weakReference = new WeakReference<FragmentList>(fragmentList);
+        displayObjects=new ArrayList<>();
+        Log.d(logging, "Harami");
     }
 
     @Override
-    protected File[] doInBackground(Void... params)
+    protected Void doInBackground(Void... params)
     {
         File internal_save = new File(context.getFilesDir(), context.getResources().getString(R.string.directory_images));
-        Log.d(logging,internal_save.getAbsolutePath());
+        Log.d(logging, internal_save.getAbsolutePath());
         File[] files = internal_save.listFiles();
         if (files == null)
         {
-            Log.d(logging,"Null returniung");
+            Log.d(logging, "Null returniung");
             return null;
         }
         labels = (new File(context.getFilesDir(), context.getResources().getString(R.string.directory_labels))).listFiles();
-        labels = (new File(context.getFilesDir(), context.getResources().getString(R.string.directory_labels))).listFiles();
         sortItOut(files, labels);
-        return files;
+        return null;
     }
 
     private void sortItOut(File[] files, File[] labels)
@@ -60,17 +63,14 @@ public class AsyncTaskForInternalFiles extends AsyncTask<Void, Void, File[]>
         Arrays.sort(labelsForSorting);
         for (int i = 0; i < files.length; i++)
         {
-            files[i] = pairForSorting[i].fi;
-            labels[i] = labelsForSorting[i].fi;
+            displayObjects.add(new DisplayObject(pairForSorting[i].fi,labelsForSorting[i].fi));
         }
     }
 
     @Override
-    protected void onPostExecute(File[] files)
+    protected void onPostExecute(Void aVoid)
     {
-        if ((!isCancelled()) && files != null)
-        {
-            weakReference.get().fillUpRecyclerView(files, labels);
-        }
+        if (displayObjects != null && weakReference.get() != null)
+            weakReference.get().fillUpRecyclerView(displayObjects);
     }
 }

@@ -7,10 +7,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.totalboron.jay.labeled.MainActivity">
-    <android.support.design.widget.AppBarLayout android:layout_width="match_parent"
-                                                android:layout_height="wrap_content"
-                                                android:id="@+id/toolbar_container"
-                                                android:theme="@style/AppTheme.AppBarOverlay">
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
             xmlns:android="http://schemas.android.com/apk/res/android"
@@ -168,11 +164,12 @@
             </FrameLayout>
 
         </android.support.v7.widget.Toolbar>
-    </android.support.design.widget.AppBarLayout>
-    <include layout="@layout/content_main"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             android:layout_below="@id/toolbar_container"/>
+
+
+    <FrameLayout android:id="@+id/container_for_fragment"
+                 android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:layout_below="@id/toolbar"/>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
@@ -183,10 +180,12 @@
         android:layout_alignParentRight="true"
         android:layout_margin="@dimen/fab_margin"
         android:src="@drawable/ic_add_white_24px"/>
+
     <FrameLayout android:id="@+id/blurring"
                  android:layout_width="match_parent"
                  android:layout_height="match_parent"
                  android:alpha="0"
+                 android:layout_below="@id/toolbar"
                  android:background="@drawable/blurring"/>
 
     <RelativeLayout android:id="@+id/overview_whole"

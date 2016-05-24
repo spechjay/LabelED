@@ -46,11 +46,4 @@ public class AsyncTaskUriShare extends AsyncTask<List<File>,Void,ArrayList<Uri>>
         }
         return modified_list;
     }
-
-    @Override
-    protected void onPostExecute(ArrayList<Uri> uris)
-    {
-        if (uris!=null)
-        reference.get().shareUris(uris);
-    }
 }

@@ -54,7 +54,7 @@ public class AsyncTaskSaveImage extends AsyncTask<Bitmap, Void, Void>
         {
             file.mkdirs();
         }
-        String time=new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());;
+        String time=new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String publicPath = file.getAbsolutePath() + "/" + "LabelED" + time + fileName;
         File internal_save=new File(context.getFilesDir(),context.getResources().getString(R.string.directory_images));
         if (!internal_save.exists())

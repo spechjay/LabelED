@@ -1,7 +1,6 @@
 package com.totalboron.jay.labeled;
 
 import android.content.Context;
-import android.support.v4.os.AsyncTaskCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,26 +20,25 @@ import java.util.List;
 public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.CardAdapterHolder>
 {
     private Context context;
-    private List<File> image_files;
-    private List<File> strings_of_files;
-    private MainActivity mainActivity;
+    private List<DisplayObject> displayObjects;
+    private FragmentList fragmentList;
+    private FragmentList.OnFragmentListUpdate onFragmentListUpdate;
     private String logging = getClass().getSimpleName();
     private boolean longClicked = false;
     private List<Integer> selection_list;
     private List<CardAdapterHolder> holders;
     private TextView numberReference;
     private RecyclerView recyclerView;
-    private boolean changed=false;
 
-    public AdapterForCardView(Context context, MainActivity mainActivity,RecyclerView recyclerView)
+    public AdapterForCardView(Context context, FragmentList fragmentList, RecyclerView recyclerView, FragmentList.OnFragmentListUpdate onFragmentListUpdate)
     {
         this.context = context;
-        this.image_files = null;
-        this.strings_of_files = null;
-        this.mainActivity = mainActivity;
+        displayObjects = null;
+        this.fragmentList = fragmentList;
         selection_list = new ArrayList<>();
         holders = new ArrayList<>();
-        this.recyclerView=recyclerView;
+        this.recyclerView = recyclerView;
+        this.onFragmentListUpdate = onFragmentListUpdate;
     }
 
     @Override
@@ -55,7 +53,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
     @Override
     public void onBindViewHolder(final CardAdapterHolder holder, int position)
     {
-        Glide.with(context).load(image_files.get(position)).into(holder.getImageView());
+        Glide.with(context).load(displayObjects.get(position).getImageFile()).into(holder.getImageView());
         if (longClicked)
         {
             if (selection_list.contains(position))
@@ -69,10 +67,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
             {
                 if (!longClicked)
                 {
-                    ImageView imageView = holder.getImageView();
-                    int[] location = new int[2];
-                    imageView.getLocationInWindow(location);
-                    mainActivity.setUpOverview(image_files.get(holder.getAdapterPosition()), strings_of_files.get(holder.getAdapterPosition()), location, imageView.getMeasuredHeight(), imageView.getMeasuredWidth());
+                    onFragmentListUpdate.setUpOverview(displayObjects.get(holder.getAdapterPosition()));
                 } else
                 {
                     longClickSelection(holder);
@@ -96,7 +91,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
             removeAllText(holder.getTableLayout());
             LoadingText loadingText = new LoadingText(context, holder.getTableLayout());
             holder.setLoadingText(loadingText, position);
-            loadingText.execute(strings_of_files.get(position));
+            loadingText.execute(displayObjects.get(position).getLabelFile());
         }
     }
 
@@ -120,12 +115,12 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
 
     private void showSelectionBar()
     {
-        mainActivity.showSelectionBar();
+        onFragmentListUpdate.showSelectionBar();
     }
 
     private void hideSelectionBar()
     {
-        mainActivity.hideSelectionBar();
+        onFragmentListUpdate.hideSelectionBar();
     }
 
     private void checkIfLast()
@@ -139,8 +134,7 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
 
     public void setNull()
     {
-        strings_of_files = null;
-        image_files = null;
+        displayObjects = null;
         notifyDataSetChanged();
     }
 
@@ -149,110 +143,103 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
         tableLayout.removeAllViews();
     }
 
-    public void setFiles(List<File> strings_of_files, List<File> image_files)
+    public void setFiles(List<DisplayObject> objects)
     {
-        if (this.strings_of_files == null)
+        objects = getNewList(objects);
+        if (displayObjects == null)
         {
-            this.image_files = image_files;
-            this.strings_of_files = strings_of_files;
+            this.displayObjects = objects;
             notifyDataSetChanged();
         } else
         {
-            animateTo(image_files, strings_of_files);
+            animateTo(objects);
         }
-        if (changed) recyclerView.scrollToPosition(0);
+    }
+
+    private List<DisplayObject> getNewList(List<DisplayObject> original)
+    {
+        List<DisplayObject> duplicate = new ArrayList<>();
+        for (int i = 0; i < original.size(); i++)
+        {
+            duplicate.add(original.get(i));
+        }
+        return duplicate;
     }
 
     private void removeItem(int pos)
     {
-        strings_of_files.remove(pos);
-        image_files.remove(pos);
+        displayObjects.remove(pos);
         notifyItemRemoved(pos);
-        changed=true;
     }
 
-    private void addItem(File image, File label)
+    private void addItem(DisplayObject displayObject)
     {
-        strings_of_files.add(label);
-        image_files.add(image);
-        notifyItemInserted(strings_of_files.size() - 1);
-        changed=true;
+        displayObjects.add(displayObject);
+        notifyItemInserted(displayObjects.size() - 1);
     }
 
     private void moveItem(int fromPosition, int toPosition)
     {
-        File file = strings_of_files.remove(fromPosition);
-        strings_of_files.add(toPosition, file);
-        file = image_files.remove(fromPosition);
-        image_files.add(toPosition, file);
+        DisplayObject item = displayObjects.remove(fromPosition);
+        displayObjects.add(toPosition, item);
         notifyItemMoved(fromPosition, toPosition);
-        changed=true;
     }
 
-    private void animateTo(List<File> newImageFile, List<File> newLabel)
+    private void animateTo(List<DisplayObject> newList)
     {
-        applyAndAnimateRemovals(newImageFile, newLabel);
-        applyAndAnimateAddition(newImageFile, newLabel);
-        applyAndAnimateMove(newImageFile, newLabel);
+        applyAndAnimateRemovals(newList);
+        applyAndAnimateAddition(newList);
+        applyAndAnimateMove(newList);
 
     }
 
-    private void applyAndAnimateMove(List<File> newImageFile, List<File> newLabel)
+    private void applyAndAnimateMove(List<DisplayObject> newList)
     {
-        Log.d("size", strings_of_files.size() + "=" + newLabel.size());
-        for (int i = 0; i < strings_of_files.size(); i++)
+        for (int toPosition = 0; toPosition < newList.size(); toPosition++)
         {
-            Log.d("strings_of_files", strings_of_files.get(i).getName());
-        }
-        for (int i = 0; i < strings_of_files.size(); i++)
-        {
-            Log.d("newLabel", newLabel.get(i).getName());
-        }
-        for (int toPosition = 0; toPosition < newLabel.size(); toPosition++)
-        {
-            int fromPosition = indexOf(strings_of_files, newLabel.get(toPosition).getName());
+            int fromPosition = indexOf(displayObjects, newList.get(toPosition).getLabelFile().getName());
             if (fromPosition >= 0 && toPosition != fromPosition)
                 moveItem(fromPosition, toPosition);
         }
     }
 
-    private void applyAndAnimateAddition(List<File> newImageFile, List<File> newLabel)
+    private void applyAndAnimateAddition(List<DisplayObject> newList)
     {
-        for (int i = 0; i < newLabel.size(); i++)
+        for (int i = 0; i < newList.size(); i++)
         {
-            if (!contains(strings_of_files, newLabel.get(i).getName()))
+            if (!contains(displayObjects, newList.get(i).getLabelFile().getName()))
             {
-                addItem(newImageFile.get(i), newLabel.get(i));
+                addItem(newList.get(i));
             }
         }
     }
 
-    private void applyAndAnimateRemovals(List<File> newImageFile, List<File> newLabel)
+    private void applyAndAnimateRemovals(List<DisplayObject> newList)
     {
-        for (int i = strings_of_files.size() - 1; i >= 0; i--)
+        for (int i = displayObjects.size() - 1; i >= 0; i--)
         {
-            if (!contains(newLabel, strings_of_files.get(i).getName()))
+            if (!contains(newList, displayObjects.get(i).getLabelFile().getName()))
             {
                 removeItem(i);
             }
         }
     }
 
-    private boolean contains(List<File> fileList, String label)
+    private boolean contains(List<DisplayObject> fileList, String label)
     {
         for (int i = 0; i < fileList.size(); i++)
         {
-            if (fileList.get(i).getName().equals(label))
+            if (fileList.get(i).getLabelFile().getName().equals(label))
                 return true;
         }
         return false;
     }
 
-    private int indexOf(List<File> newList, String label)
+    private int indexOf(List<DisplayObject> newList, String label)
     {
         for (int i = 0; i < newList.size(); i++)
         {
-            if (newList.get(i).getName().equals(label))
+            if (newList.get(i).getLabelFile().getName().equals(label))
                 return i;
         }
         return -99;
@@ -262,34 +249,27 @@ public class AdapterForCardView extends RecyclerView.Adapter<AdapterForCardView.
     @Override
     public int getItemCount()
     {
-        return image_files == null ? 0 : image_files.size();
+        return displayObjects == null ? 0 : displayObjects.size();
     }
 
-    public void addToDatabase()
-    {
-        DatabaseAdapter databaseAdapter = new DatabaseAdapter(context);
-        databaseAdapter.displayAll();
-    }
 
     public void setNumberReference(TextView numberReference)
     {
         this.numberReference = numberReference;
     }
 
-    public void getListItems(MainActivity mainActivity, int requestCode)
+    public void getListItems(int requestCode)
     {
-        List<File> images_delete = new ArrayList<>();
-        List<File> labels_delete = new ArrayList<>();
+        List<DisplayObject> selections = new ArrayList<>();
         int selectin = -1;
         for (int i = 0; i < selection_list.size(); i++)
         {
             selectin = selection_list.get(i);
-            images_delete.add(image_files.get(selectin));
-            labels_delete.add(strings_of_files.get(selectin));
+            selections.add(displayObjects.get(selectin));
         }
         if (requestCode == 0)
-            mainActivity.receiverOfSelection(images_delete, labels_delete);
-        else mainActivity.sharing(images_delete);
+            fragmentList.receiverOfSelection(selections);
+        else fragmentList.sharing(selections);
     }
 
     class CardAdapterHolder extends RecyclerView.ViewHolder

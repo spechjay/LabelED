@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
-    android:id="@+id/main_view_relative_layout"
+    android:id="@+id/fragment_relative_recycler_container"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/card_view_contrast"
-    tools:context="com.totalboron.jay.labeled.MainActivity"
-    tools:showIn="@layout/app_bar_main">
-    <android.support.v7.widget.RecyclerView android:id="@+id/main_activity_recycler_view"
+    android:background="@color/card_view_contrast">
+
+    <android.support.v7.widget.RecyclerView android:id="@+id/fragment_recycler_view"
                                             android:layout_width="match_parent"
                                             android:layout_height="match_parent"/>
 </RelativeLayout>
